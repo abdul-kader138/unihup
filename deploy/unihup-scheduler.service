@@ -1,0 +1,14 @@
+[Unit]
+Description=UniHup scheduler tick (php artisan schedule:run)
+After=network.target mysql.service
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/unihup
+# One tick per invocation — Laravel's scheduler itself decides which due
+# tasks (see routes/console.php) actually run this minute. Triggered by the
+# paired .timer unit, not run continuously. No tasks are scheduled yet, but
+# the unit is harmless to install ahead of needing one.
+ExecStart=/usr/bin/php /var/www/unihup/artisan schedule:run

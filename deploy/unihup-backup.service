@@ -1,0 +1,10 @@
+[Unit]
+Description=UniHup database backup (deploy/backup.sh)
+After=network.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/unihup
+ExecStart=/var/www/unihup/deploy/backup.sh

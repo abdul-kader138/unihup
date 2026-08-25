@@ -1,0 +1,24 @@
+[Unit]
+Description=UniHup queue worker (php artisan queue:work)
+After=network.target mysql.service
+
+[Service]
+Type=simple
+# Matches deploy.sh's own WEB_USER/APP_DIR defaults. If those are ever
+# overridden via env vars for a given deployment, update User/Group and
+# WorkingDirectory/ExecStart below to match — this file is installed
+# as-is by deploy.sh, not templated.
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/unihup
+# QUEUE_CONNECTION=database by default (see .env.example) — a plain worker
+# loop is all that's needed at this scale, no Horizon/Redis required.
+# --max-time recycles the worker periodically so it always picks up a fresh
+# deploy's code (a long-lived worker process keeps the old code in memory
+# otherwise); systemd's Restart=always brings it straight back up.
+ExecStart=/usr/bin/php /var/www/unihup/artisan queue:work database --tries=3 --max-time=3600
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
