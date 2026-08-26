@@ -46,6 +46,89 @@ class DegreeProgramDetailsModalTest extends TestCase
         $this->assertStringContainsString('IELTS', $html); // LanguageProficiencyCopy::ENGLISH_NOTE
         $this->assertStringContainsString('Dichiarazione di Valore', $html); // DocumentRecognitionCopy::MODAL_NOTE
         $this->assertStringContainsString('Type D student visa', $html); // VisaArrivalCopy::MODAL_NOTE
+        $this->assertStringNotContainsString('Admission tests (TOLC/IMAT) guide', $html); // open access — no callout
+    }
+
+    public function test_it_shows_the_admission_test_callout_for_restricted_programs_only(): void
+    {
+        $university = University::create(['name' => 'Test University', 'slug' => 'test-university', 'city' => 'Rome', 'region' => 'Lazio']);
+        $subject = Subject::create(['name' => 'Medicine', 'slug' => 'medicine']);
+        $program = DegreeProgram::create([
+            'university_id' => $university->id,
+            'subject_id' => $subject->id,
+            'degree_level' => 'single_cycle',
+            'name' => 'Medicine and Surgery',
+            'language' => 'English',
+            'admission_type' => 'restricted',
+        ]);
+
+        $html = view('filament.pages.degree-program-details', ['program' => $program])->render();
+
+        $this->assertStringContainsString('Restricted admission', $html);
+        $this->assertStringContainsString('Admission tests (TOLC/IMAT) guide', $html);
+    }
+
+    public function test_it_shows_the_invest_your_talent_box_for_masters_programs_only(): void
+    {
+        $university = University::create(['name' => 'Test University', 'slug' => 'test-university', 'city' => 'Turin', 'region' => 'Piemonte']);
+        $subject = Subject::create(['name' => 'Engineering', 'slug' => 'engineering']);
+
+        $master = DegreeProgram::create([
+            'university_id' => $university->id,
+            'subject_id' => $subject->id,
+            'degree_level' => 'master',
+            'name' => 'Mechanical Engineering',
+            'language' => 'English',
+            'admission_type' => 'open',
+        ]);
+
+        $bachelor = DegreeProgram::create([
+            'university_id' => $university->id,
+            'subject_id' => $subject->id,
+            'degree_level' => 'bachelor',
+            'name' => 'Mechanical Engineering',
+            'language' => 'English',
+            'admission_type' => 'open',
+        ]);
+
+        $masterHtml = view('filament.pages.degree-program-details', ['program' => $master])->render();
+        $bachelorHtml = view('filament.pages.degree-program-details', ['program' => $bachelor])->render();
+
+        $this->assertStringContainsString('Invest Your Talent in Italy', $masterHtml);
+        $this->assertStringNotContainsString('Invest Your Talent in Italy', $bachelorHtml);
+    }
+
+    public function test_it_shows_a_sourced_rent_figure_for_a_known_city_and_a_fallback_for_an_unknown_one(): void
+    {
+        $subject = Subject::create(['name' => 'Computer Science', 'slug' => 'computer-science']);
+
+        $milanUniversity = University::create(['name' => 'Test University', 'slug' => 'test-university-milan', 'city' => 'Milan', 'region' => 'Lombardia']);
+        $milanProgram = DegreeProgram::create([
+            'university_id' => $milanUniversity->id,
+            'subject_id' => $subject->id,
+            'degree_level' => 'bachelor',
+            'name' => 'Computer Science',
+            'language' => 'English',
+            'admission_type' => 'open',
+        ]);
+
+        $smallTownUniversity = University::create(['name' => 'Small Town University', 'slug' => 'small-town-university', 'city' => 'Enna Bassa', 'region' => 'Sicilia']);
+        $smallTownProgram = DegreeProgram::create([
+            'university_id' => $smallTownUniversity->id,
+            'subject_id' => $subject->id,
+            'degree_level' => 'bachelor',
+            'name' => 'Computer Science',
+            'language' => 'English',
+            'admission_type' => 'open',
+        ]);
+
+        $milanHtml = view('filament.pages.degree-program-details', ['program' => $milanProgram])->render();
+        $smallTownHtml = view('filament.pages.degree-program-details', ['program' => $smallTownProgram])->render();
+
+        $this->assertStringContainsString('1,338/month', $milanHtml);
+        $this->assertStringContainsString('Well above national average', $milanHtml);
+        $this->assertStringNotContainsString('/month</span>', $smallTownHtml);
+        $this->assertStringContainsString('check a live index like Numbeo or Idealista', $smallTownHtml);
     }
 
     public function test_it_shows_italian_language_guidance_for_italian_taught_programs(): void

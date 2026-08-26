@@ -10,6 +10,7 @@
 
     $languageNote = \App\Support\LanguageProficiencyCopy::forLanguage($program->language);
     $ranking = $university->latestRanking();
+    $costOfLiving = \App\Support\CostOfLivingCopy::forCity($university->city);
 @endphp
 
 <div class="space-y-4 text-sm">
@@ -81,6 +82,25 @@
     @endif
 
     <div>
+        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Cost of living in {{ $university->city }}</div>
+        @if ($costOfLiving)
+            <p class="mt-1">
+                Average asking rent around <span class="font-medium">&euro;{{ number_format($costOfLiving['rent']) }}/month</span>
+                ({{ $costOfLiving['tier'] }}, national average is &euro;{{ number_format(\App\Support\CostOfLivingCopy::NATIONAL_AVERAGE_RENT) }}/month) &mdash;
+                as of {{ \App\Support\CostOfLivingCopy::AS_OF }}.
+            </p>
+        @endif
+        <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ \App\Support\CostOfLivingCopy::GENERAL_NOTE }}</p>
+        <div class="mt-2 flex flex-wrap gap-4">
+            @foreach (\App\Support\CostOfLivingCopy::OFFICIAL_LINKS as $label => $url)
+                <a href="{{ $url }}" target="_blank" rel="noopener" class="text-xs text-primary-600 hover:underline dark:text-primary-400">
+                    {{ $label }} &rarr;
+                </a>
+            @endforeach
+        </div>
+    </div>
+
+    <div>
         <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Financial support for international students</div>
         <div class="mt-2 space-y-2">
             <div class="rounded-lg border border-gray-200 p-2 dark:border-white/10">
@@ -91,6 +111,15 @@
                 <div class="font-medium">MAECI government scholarships</div>
                 <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ \App\Support\FinancialSupportCopy::MAECI_SCHOLARSHIP_NOTE }}</p>
             </div>
+            @if ($program->degree_level === 'master')
+                <div class="rounded-lg border border-gray-200 p-2 dark:border-white/10">
+                    <div class="font-medium">Invest Your Talent in Italy (study + internship)</div>
+                    <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ \App\Support\FinancialSupportCopy::IYT_SCHOLARSHIP_NOTE }}</p>
+                    <a href="{{ \App\Support\FinancialSupportCopy::IYT_LINK }}" target="_blank" rel="noopener" class="mt-2 inline-block text-xs text-primary-600 hover:underline dark:text-primary-400">
+                        Invest Your Talent in Italy — how it works &rarr;
+                    </a>
+                </div>
+            @endif
         </div>
         <div class="mt-2 flex flex-wrap gap-4">
             @foreach (\App\Support\FinancialSupportCopy::OFFICIAL_LINKS as $label => $url)
@@ -166,6 +195,16 @@
                     CENSIS full ranking &rarr;
                 </a>
             @endif
+        </div>
+    @endif
+
+    @if ($program->admission_type === 'restricted')
+        <div class="rounded-lg border border-warning-200 bg-warning-50 p-3 dark:border-warning-400/20 dark:bg-warning-400/5">
+            <div class="text-xs font-semibold uppercase tracking-wide text-warning-700 dark:text-warning-400">Restricted admission</div>
+            <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ \App\Support\AdmissionTestCopy::MODAL_NOTE }}</p>
+            <a href="{{ route('filament.admin.pages.admission-tests') }}" target="_blank" class="mt-2 inline-block text-xs font-medium text-warning-700 hover:underline dark:text-warning-400">
+                Admission tests (TOLC/IMAT) guide &rarr;
+            </a>
         </div>
     @endif
 

@@ -24,7 +24,7 @@ class DocumentRecognitionGuide extends Page
 
     protected static ?string $slug = 'doc-recognition';
 
-    protected static ?int $navigationSort = 0;
+    protected static ?int $navigationSort = 1;
 
     protected static string $view = 'filament.pages.document-recognition-guide';
 

@@ -19,6 +19,13 @@ class FinancialSupportCopyTest extends TestCase
         $this->assertStringContainsString('regional', FinancialSupportCopy::MAECI_SCHOLARSHIP_NOTE);
     }
 
+    public function test_it_exposes_iyt_scholarship_guidance_distinct_from_the_general_maeci_scholarship(): void
+    {
+        $this->assertStringContainsString('Invest Your Talent', FinancialSupportCopy::IYT_SCHOLARSHIP_NOTE);
+        $this->assertStringContainsString('internship', FinancialSupportCopy::IYT_SCHOLARSHIP_NOTE);
+        $this->assertStringContainsString('eligible countries', FinancialSupportCopy::IYT_SCHOLARSHIP_NOTE);
+    }
+
     public function test_official_links_are_non_empty_urls(): void
     {
         $this->assertNotEmpty(FinancialSupportCopy::OFFICIAL_LINKS);
