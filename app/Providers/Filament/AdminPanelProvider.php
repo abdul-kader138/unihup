@@ -55,6 +55,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('')
+            ->theme(asset('css/filament/admin/theme.css'))
             ->homeUrl(fn () => FindUniversities::getUrl())
             ->login(Login::class)
             ->registration(Register::class)
@@ -65,6 +66,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotificationsPolling('30s')
             ->brandName(fn () => Setting::get('app_name', 'UniHup'))
             ->brandLogo(fn () => self::resolveBrandLogoUrl())
+            ->brandLogoHeight('2.5rem')
             ->favicon(fn () => self::resolveFaviconUrl())
             ->colors([
                 'primary' => self::resolveThemeColor(),

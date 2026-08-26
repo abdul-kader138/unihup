@@ -4,6 +4,8 @@
             If your previous diploma or degree was awarded outside Italy, most universities will ask you to document
             how it fits into the Italian system before you can enrol. There are two separate routes to do that —
             this page explains both, and how to tell which one a given program actually wants.
+            (This is about your qualification being recognized, not immigration — for the visa and residence permit
+            process, see the <a href="{{ route('filament.admin.pages.visa-arrival') }}" class="text-primary-600 hover:underline dark:text-primary-400">Visa &amp; Arrival guide</a>.)
         </div>
 
         @foreach ($this->getSections() as $section)

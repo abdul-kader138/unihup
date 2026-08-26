@@ -81,6 +81,27 @@
     @endif
 
     <div>
+        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Financial support for international students</div>
+        <div class="mt-2 space-y-2">
+            <div class="rounded-lg border border-gray-200 p-2 dark:border-white/10">
+                <div class="font-medium">ISEE Parificato (for your tuition bracket)</div>
+                <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ \App\Support\FinancialSupportCopy::ISEE_PARIFICATO_NOTE }}</p>
+            </div>
+            <div class="rounded-lg border border-gray-200 p-2 dark:border-white/10">
+                <div class="font-medium">MAECI government scholarships</div>
+                <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ \App\Support\FinancialSupportCopy::MAECI_SCHOLARSHIP_NOTE }}</p>
+            </div>
+        </div>
+        <div class="mt-2 flex flex-wrap gap-4">
+            @foreach (\App\Support\FinancialSupportCopy::OFFICIAL_LINKS as $label => $url)
+                <a href="{{ $url }}" target="_blank" rel="noopener" class="text-xs text-primary-600 hover:underline dark:text-primary-400">
+                    {{ $label }} &rarr;
+                </a>
+            @endforeach
+        </div>
+    </div>
+
+    <div>
         <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Language proficiency</div>
         <p class="whitespace-pre-line">{{ $languageNote }}</p>
         <p class="mt-1 text-xs text-gray-400">General guidance for {{ $program->language }}-taught programs — not this specific program's exact requirement.</p>
@@ -149,11 +170,17 @@
     @endif
 
     <div class="rounded-lg border border-primary-200 bg-primary-50 p-3 dark:border-primary-400/20 dark:bg-primary-400/5">
-        <div class="text-xs font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-400">Coming from a foreign qualification?</div>
+        <div class="text-xs font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-400">Applying from outside Italy?</div>
         <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ \App\Support\DocumentRecognitionCopy::MODAL_NOTE }}</p>
-        <a href="{{ route('filament.admin.pages.doc-recognition') }}" target="_blank" class="mt-2 inline-block text-xs font-medium text-primary-600 hover:underline dark:text-primary-400">
-            Full DOV / CIMEA guide &rarr;
-        </a>
+        <p class="mt-2 text-xs text-gray-600 dark:text-gray-400">{{ \App\Support\VisaArrivalCopy::MODAL_NOTE }}</p>
+        <div class="mt-2 flex flex-wrap gap-4">
+            <a href="{{ route('filament.admin.pages.doc-recognition') }}" target="_blank" class="text-xs font-medium text-primary-600 hover:underline dark:text-primary-400">
+                Document recognition (DOV/CIMEA) guide &rarr;
+            </a>
+            <a href="{{ route('filament.admin.pages.visa-arrival') }}" target="_blank" class="text-xs font-medium text-primary-600 hover:underline dark:text-primary-400">
+                Visa &amp; arrival guide &rarr;
+            </a>
+        </div>
     </div>
 
     <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-white/10 dark:bg-white/5">

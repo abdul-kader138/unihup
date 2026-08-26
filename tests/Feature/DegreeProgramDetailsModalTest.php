@@ -45,6 +45,7 @@ class DegreeProgramDetailsModalTest extends TestCase
         $this->assertStringNotContainsString('DiSCo Lombardia', $html); // wrong region — must not leak in
         $this->assertStringContainsString('IELTS', $html); // LanguageProficiencyCopy::ENGLISH_NOTE
         $this->assertStringContainsString('Dichiarazione di Valore', $html); // DocumentRecognitionCopy::MODAL_NOTE
+        $this->assertStringContainsString('Type D student visa', $html); // VisaArrivalCopy::MODAL_NOTE
     }
 
     public function test_it_shows_italian_language_guidance_for_italian_taught_programs(): void
@@ -155,5 +156,26 @@ class DegreeProgramDetailsModalTest extends TestCase
         $html = view('filament.pages.degree-program-details', ['program' => $program])->render();
 
         $this->assertStringNotContainsString('CENSIS score breakdown', $html);
+    }
+
+    public function test_it_always_shows_financial_support_info_regardless_of_region(): void
+    {
+        // No RegionalScholarship rows exist at all here — MAECI/ISEE Parificato are
+        // national, not regional, so this must render with zero scholarship data present.
+        $university = University::create(['name' => 'Test University', 'slug' => 'test-university', 'city' => 'Rome', 'region' => null]);
+        $subject = Subject::create(['name' => 'Computer Science', 'slug' => 'computer-science']);
+        $program = DegreeProgram::create([
+            'university_id' => $university->id,
+            'subject_id' => $subject->id,
+            'degree_level' => 'bachelor',
+            'name' => 'Computer Science',
+            'language' => 'Italian',
+            'admission_type' => 'open',
+        ]);
+
+        $html = view('filament.pages.degree-program-details', ['program' => $program])->render();
+
+        $this->assertStringContainsString('ISEE Parificato', $html);
+        $this->assertStringContainsString('MAECI', $html);
     }
 }
