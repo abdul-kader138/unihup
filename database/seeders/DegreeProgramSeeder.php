@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\DegreeProgram;
 use App\Models\Subject;
 use App\Models\University;
+use App\Support\AdmissionCopy;
 use Illuminate\Database\Seeder;
 
 /**
@@ -18,18 +19,6 @@ use Illuminate\Database\Seeder;
  */
 class DegreeProgramSeeder extends Seeder
 {
-    private const OPEN_NOTE = "Open access (libero accesso): apply directly through the university's online enrollment portal. No entrance exam is required to be admitted, though some programs ask you to sit a non-selective self-assessment test (TOLC) first.";
-
-    private const RESTRICTED_NOTE = 'Restricted access (numero programmato): admission is capped and decided by a national or university-run entrance exam. Seats go by rank order of exam score, for EU and non-EU applicants alike.';
-
-    private const MASTER_NOTE = "Apply with a relevant bachelor's degree via the university's online portal. Programs typically assess your transcript and require proof of language proficiency (Italian or English, depending on the program); some also ask for a CV or short motivation letter.";
-
-    private const TUITION_NOTE = 'Public Italian universities set tuition on a sliding scale tied to family income (ISEE) for most applicants, commonly from a few hundred to around €4,000/year; private universities and English-taught international tracks charge more. Confirm the exact figure for your situation on the official page.';
-
-    private const WINDOW_OPEN = 'Applications typically open in July and close around September, for enrollment starting late September/October — check Universitaly and the university\'s own portal for exact dates each year.';
-
-    private const WINDOW_RESTRICTED = "Entrance exam and application dates are published annually, usually between July and September for a fall start — check Universitaly and the university's page for the exact date, which changes every year.";
-
     /**
      * Each row: university slug, subject slug, degree level, official-ish
      * course title, language, duration in years, admission type, and an
@@ -85,8 +74,8 @@ class DegreeProgramSeeder extends Seeder
         ['university-of-trento', 'computer-science', 'master', 'Computer Science', 'English', 2, 'open'],
         ['university-of-trento', 'economics', 'bachelor', 'Economics and Management', 'Italian', 3, 'open'],
 
-        ["ca-foscari-university-of-venice", 'economics', 'bachelor', 'Economics and Management', 'Italian', 3, 'open'],
-        ["ca-foscari-university-of-venice", 'international-relations', 'bachelor', 'International Relations', 'English', 3, 'open'],
+        ['ca-foscari-university-of-venice', 'economics', 'bachelor', 'Economics and Management', 'Italian', 3, 'open'],
+        ['ca-foscari-university-of-venice', 'international-relations', 'bachelor', 'International Relations', 'English', 3, 'open'],
 
         ['university-of-genoa', 'civil-engineering', 'bachelor', 'Civil Engineering', 'Italian', 3, 'open'],
         ['university-of-genoa', 'physics', 'master', 'Physics', 'English', 2, 'open'],
@@ -109,11 +98,7 @@ class DegreeProgramSeeder extends Seeder
             }
 
             $isRestricted = $admissionType === 'restricted';
-            $admissionNotes = $isRestricted ? self::RESTRICTED_NOTE : self::OPEN_NOTE;
-
-            if ($degreeLevel === 'master') {
-                $admissionNotes = self::MASTER_NOTE;
-            }
+            $admissionNotes = AdmissionCopy::admissionNotes($degreeLevel, $admissionType);
 
             if ($extraNote) {
                 $admissionNotes .= ' '.$extraNote;
@@ -131,8 +116,8 @@ class DegreeProgramSeeder extends Seeder
                     'duration_years' => $durationYears,
                     'admission_type' => $admissionType,
                     'admission_notes' => $admissionNotes,
-                    'tuition_note' => self::TUITION_NOTE,
-                    'application_window_note' => $isRestricted ? self::WINDOW_RESTRICTED : self::WINDOW_OPEN,
+                    'tuition_note' => AdmissionCopy::TUITION_NOTE,
+                    'application_window_note' => AdmissionCopy::applicationWindowNote($admissionType),
                     'official_admission_url' => $university->website_url,
                     'source_url' => 'https://www.universitaly.it',
                     'last_verified_at' => now(),

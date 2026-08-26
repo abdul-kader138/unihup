@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
             SubjectSeeder::class,
             UniversitySeeder::class,
             DegreeProgramSeeder::class,
+            RegionalScholarshipSeeder::class,
+            UniversityRankingSeeder::class,
         ]);
     }
 }

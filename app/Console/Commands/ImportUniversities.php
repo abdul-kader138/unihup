@@ -2,23 +2,25 @@
 
 namespace App\Console\Commands;
 
-use App\Contracts\UniversityDataImporter;
-use App\Services\Universities\SeedDataImporter;
-use App\Services\Universities\UniversitalyImporter;
+use App\Services\Universities\ImporterRegistry;
 use Illuminate\Console\Command;
 
 class ImportUniversities extends Command
 {
-    protected $signature = 'universities:import {--source=seed : "seed" (bundled curated dataset) or "universitaly" (not yet implemented)}';
+    protected $signature = 'universities:import
+        {--source=seed : "seed" (bundled curated dataset), "mur" (live MUR/USTAT open data), or "universitaly" (not yet implemented)}
+        {--year= : Academic year to import for --source=mur (defaults to the most recent year in the dataset)}';
 
     protected $description = 'Import or refresh university/subject/degree-program data';
 
     public function handle(): int
     {
-        $importer = $this->resolveImporter((string) $this->option('source'));
+        $source = (string) $this->option('source');
+        $year = $this->option('year') !== null ? (int) $this->option('year') : null;
+        $importer = ImporterRegistry::resolve($source, $year);
 
         if (! $importer) {
-            $this->error('Unknown --source. Use "seed" or "universitaly".');
+            $this->error('Unknown --source. Use one of: '.implode(', ', array_keys(ImporterRegistry::SOURCES)));
 
             return self::INVALID;
         }
@@ -35,14 +37,5 @@ class ImportUniversities extends Command
         $this->line("Universities: {$result->universities} · Subjects: {$result->subjects} · Degree programs: {$result->degreePrograms}");
 
         return self::SUCCESS;
-    }
-
-    private function resolveImporter(string $source): ?UniversityDataImporter
-    {
-        return match ($source) {
-            'seed' => new SeedDataImporter,
-            'universitaly' => new UniversitalyImporter,
-            default => null,
-        };
     }
 }
