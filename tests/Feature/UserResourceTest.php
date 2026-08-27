@@ -70,6 +70,7 @@ class UserResourceTest extends TestCase
         $created = User::where('email', 'jamie@example.com')->firstOrFail();
         $this->assertTrue($created->hasRole('operator'));
         $this->assertTrue(Hash::check('Password123', $created->password));
+        $this->assertTrue($created->hasVerifiedEmail());
     }
 
     public function test_password_is_required_on_create_but_optional_on_edit(): void

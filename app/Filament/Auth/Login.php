@@ -62,6 +62,14 @@ class Login extends BaseLogin
             $this->throwFailureValidationException();
         }
 
+        // Self-registered users may use the verification prompt from their
+        // registration session, but cannot establish a new login session
+        // until the email address has been verified. Users created by a
+        // super admin are stamped as verified in CreateUser.
+        if (! $user->hasVerifiedEmail()) {
+            $this->throwFailureValidationException();
+        }
+
         if ($this->userNeedsTwoFactorChallenge($user)) {
             session([
                 'two_factor_authentication_user_id' => $user->getKey(),

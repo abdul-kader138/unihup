@@ -52,6 +52,22 @@ class LoginTwoFactorChallengeTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_unverified_user_cannot_log_in(): void
+    {
+        $user = User::factory()->unverified()->create([
+            'email' => 'unverified@example.com',
+            'password' => bcrypt('password123'),
+        ]);
+        $user->assignRole('panel_user');
+
+        Livewire::test(Login::class)
+            ->fillForm(['email' => 'unverified@example.com', 'password' => 'password123'])
+            ->call('authenticate')
+            ->assertHasErrors();
+
+        $this->assertGuest();
+    }
+
     public function test_user_with_two_factor_is_challenged_instead_of_logged_in_immediately(): void
     {
         $this->makeTwoFactorUser();
