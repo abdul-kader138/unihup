@@ -97,19 +97,18 @@ class FindUniversities extends Page implements HasTable
                             ->grow(false),
 
                         Stack::make([
-                            Split::make([
-                                TextColumn::make('university.name')
-                                    ->label('University')
-                                    ->weight('bold')
-                                    ->searchable()
-                                    ->sortable()
-                                    ->wrap(),
+                            TextColumn::make('university.name')
+                                ->label('University')
+                                ->weight('bold')
+                                ->searchable()
+                                ->sortable()
+                                ->wrap(),
 
-                                TextColumn::make('degree_level')
-                                    ->badge()
-                                    ->grow(false)
-                                    ->formatStateUsing(fn (string $state) => DegreeProgram::DEGREE_LEVELS[$state] ?? $state),
-                            ]),
+                            TextColumn::make('degree_level')
+                                ->badge()
+                                ->grow(false)
+                                ->wrap()
+                                ->formatStateUsing(fn (string $state) => DegreeProgram::DEGREE_LEVELS[$state] ?? $state),
 
                             TextColumn::make('university.city')
                                 ->label('City')
