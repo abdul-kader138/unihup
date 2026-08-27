@@ -40,12 +40,12 @@ class SystemSettingsPageTest extends TestCase
 
         Livewire::test(SystemSettings::class)
             ->fillForm([
-                'app_name'                 => 'Acme Support',
-                'app_tagline'              => 'Tickets handled right.',
-                'admin_theme'              => 'emerald',
-                'admin_panel_theme_mode'   => 'light',
-                'mail_from_name'           => 'Acme Support',
-                'mail_from_address'        => 'no-reply@acmesupport.test',
+                'app_name' => 'Acme Support',
+                'app_tagline' => 'Tickets handled right.',
+                'admin_theme' => 'emerald',
+                'admin_panel_theme_mode' => 'light',
+                'mail_from_name' => 'Acme Support',
+                'mail_from_address' => 'no-reply@acmesupport.test',
                 'staff_notification_email' => 'staff@acmesupport.test',
             ])
             ->call('save')
@@ -58,5 +58,43 @@ class SystemSettingsPageTest extends TestCase
         $this->assertSame('Acme Support', Setting::get('mail_from_name'));
         $this->assertSame('no-reply@acmesupport.test', Setting::get('mail_from_address'));
         $this->assertSame('staff@acmesupport.test', Setting::get('staff_notification_email'));
+    }
+
+    public function test_multiple_email_vendors_are_saved_with_one_active_vendor(): void
+    {
+        $this->actingAsSuperAdmin();
+
+        Livewire::test(SystemSettings::class)
+            ->fillForm([
+                'mail_active_vendor' => 'brevo',
+                'mail_vendors' => [
+                    [
+                        'key' => 'smtp',
+                        'label' => 'Backup SMTP',
+                        'transport' => 'smtp',
+                        'host' => 'smtp.example.com',
+                        'port' => 587,
+                        'username' => 'backup@example.com',
+                        'password' => 'backup-secret',
+                        'encryption' => 'tls',
+                    ],
+                    [
+                        'key' => 'brevo',
+                        'label' => 'Brevo',
+                        'transport' => 'smtp',
+                        'host' => 'smtp-relay.brevo.com',
+                        'port' => 587,
+                        'username' => 'brevo-login',
+                        'password' => 'brevo-api-key',
+                        'encryption' => 'tls',
+                    ],
+                ],
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('brevo', Setting::get('mail_active_vendor'));
+        $this->assertCount(2, Setting::get('mail_vendors'));
+        $this->assertSame('smtp-relay.brevo.com', Setting::get('mail_vendors')[1]['host']);
     }
 }

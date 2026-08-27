@@ -10,6 +10,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Tabs;
@@ -92,11 +93,8 @@ class SystemSettings extends Page implements HasForms
             // Email
             'mail_from_name' => Setting::get('mail_from_name', config('mail.from.name', '')),
             'mail_from_address' => Setting::get('mail_from_address', config('mail.from.address', '')),
-            'mail_host' => Setting::get('mail_host', ''),
-            'mail_port' => Setting::get('mail_port', 587),
-            'mail_username' => Setting::get('mail_username', ''),
-            'mail_password' => Setting::get('mail_password', ''),
-            'mail_encryption' => Setting::get('mail_encryption', 'tls'),
+            'mail_active_vendor' => Setting::get('mail_active_vendor', 'smtp'),
+            'mail_vendors' => $this->getMailVendors(),
             'staff_notification_email' => Setting::get('staff_notification_email', ''),
         ]);
     }
@@ -265,41 +263,89 @@ class SystemSettings extends Page implements HasForms
                                     ->helperText('Where system alerts are sent. Leave blank to disable.'),
                             ]),
 
-                            Section::make('SMTP Server')
-                                ->description('Configure an SMTP provider to actually deliver emails. Leave the host blank to keep using the default log/array driver.')
+                            Section::make('Email Vendors')
+                                ->description('Store multiple SMTP vendors and select exactly one active vendor. Brevo uses smtp-relay.brevo.com on port 587 with TLS.')
                                 ->schema([
-                                    Grid::make(2)->schema([
-                                        TextInput::make('mail_host')
-                                            ->label('SMTP Host')
-                                            ->placeholder('smtp-relay.brevo.com')
-                                            ->maxLength(255),
-
-                                        TextInput::make('mail_port')
-                                            ->label('SMTP Port')
-                                            ->numeric()
-                                            ->placeholder('587'),
-                                    ]),
-
-                                    Grid::make(2)->schema([
-                                        TextInput::make('mail_username')
-                                            ->label('SMTP Username')
-                                            ->maxLength(255),
-
-                                        TextInput::make('mail_password')
-                                            ->label('SMTP Password')
-                                            ->password()
-                                            ->revealable()
-                                            ->autocomplete('new-password')
-                                            ->maxLength(255),
-                                    ]),
-
-                                    Select::make('mail_encryption')
-                                        ->label('Encryption')
+                                    Select::make('mail_active_vendor')
+                                        ->label('Active vendor')
                                         ->options([
-                                            'tls' => 'TLS',
-                                            'ssl' => 'SSL',
+                                            'smtp' => 'SMTP',
+                                            'brevo' => 'Brevo',
+                                            'sendgrid' => 'SendGrid',
+                                            'mailgun' => 'Mailgun',
+                                            'ses' => 'Amazon SES SMTP',
+                                            'postmark' => 'Postmark SMTP',
+                                            'resend' => 'Resend SMTP',
+                                            'log' => 'Log only (development)',
                                         ])
-                                        ->native(false),
+                                        ->required()
+                                        ->native(false)
+                                        ->helperText('Only this vendor receives outgoing mail. Its key must match a vendor profile below.'),
+
+                                    Repeater::make('mail_vendors')
+                                        ->label('Vendor profiles')
+                                        ->schema([
+                                            Grid::make(2)->schema([
+                                                TextInput::make('key')
+                                                    ->label('Vendor key')
+                                                    ->required()
+                                                    ->alphaDash()
+                                                    ->maxLength(50)
+                                                    ->helperText('Example: brevo'),
+
+                                                TextInput::make('label')
+                                                    ->label('Display name')
+                                                    ->required()
+                                                    ->maxLength(100),
+                                            ]),
+                                            Grid::make(2)->schema([
+                                                TextInput::make('host')
+                                                    ->label('SMTP host')
+                                                    ->maxLength(255)
+                                                    ->placeholder('smtp-relay.brevo.com'),
+
+                                                TextInput::make('port')
+                                                    ->label('SMTP port')
+                                                    ->numeric()
+                                                    ->default(587),
+                                            ]),
+                                            Grid::make(2)->schema([
+                                                TextInput::make('username')
+                                                    ->label('SMTP username')
+                                                    ->maxLength(255),
+
+                                                TextInput::make('password')
+                                                    ->label('SMTP password / API key')
+                                                    ->password()
+                                                    ->revealable()
+                                                    ->autocomplete('new-password')
+                                                    ->maxLength(255),
+                                            ]),
+                                            Select::make('encryption')
+                                                ->label('Encryption')
+                                                ->options([
+                                                    'tls' => 'TLS',
+                                                    'ssl' => 'SSL',
+                                                    'none' => 'None',
+                                                ])
+                                                ->default('tls')
+                                                ->native(false),
+                                            Select::make('transport')
+                                                ->label('Transport')
+                                                ->options([
+                                                    'smtp' => 'SMTP',
+                                                    'log' => 'Log only',
+                                                ])
+                                                ->default('smtp')
+                                                ->live()
+                                                ->native(false),
+                                        ])
+                                        ->defaultItems(1)
+                                        ->itemLabel(fn (array $state): ?string => $state['label'] ?? $state['key'] ?? null)
+                                        ->addActionLabel('Add email vendor')
+                                        ->collapsible()
+                                        ->reorderable(false)
+                                        ->required(),
                                 ]),
                         ]),
 
@@ -324,11 +370,8 @@ class SystemSettings extends Page implements HasForms
             'google_client_secret' => 'security',
             'mail_from_name' => 'email',
             'mail_from_address' => 'email',
-            'mail_host' => 'email',
-            'mail_port' => 'email',
-            'mail_username' => 'email',
-            'mail_password' => 'email',
-            'mail_encryption' => 'email',
+            'mail_active_vendor' => 'email',
+            'mail_vendors' => 'email',
             'staff_notification_email' => 'email',
         ];
 
@@ -340,6 +383,32 @@ class SystemSettings extends Page implements HasForms
             ->success()
             ->title('Settings saved')
             ->send();
+    }
+
+    /**
+     * Seed the new vendor profile UI from the legacy single-SMTP settings so
+     * existing installations keep their current mail configuration.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function getMailVendors(): array
+    {
+        $vendors = Setting::get('mail_vendors');
+
+        if (is_array($vendors) && $vendors !== []) {
+            return $vendors;
+        }
+
+        return [[
+            'key' => 'smtp',
+            'label' => 'SMTP',
+            'transport' => 'smtp',
+            'host' => Setting::get('mail_host', ''),
+            'port' => Setting::get('mail_port', 587),
+            'username' => Setting::get('mail_username', ''),
+            'password' => Setting::get('mail_password', ''),
+            'encryption' => Setting::get('mail_encryption', 'tls'),
+        ]];
     }
 
     protected function getFormActions(): array
