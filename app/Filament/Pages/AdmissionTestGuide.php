@@ -25,7 +25,9 @@ class AdmissionTestGuide extends Page
 
     protected static ?string $slug = 'admission-tests';
 
-    protected static ?int $navigationSort = 0;
+    protected static ?int $navigationSort = 10;
+
+    protected static ?string $navigationGroup = 'Guides';
 
     protected static string $view = 'filament.pages.admission-test-guide';
 

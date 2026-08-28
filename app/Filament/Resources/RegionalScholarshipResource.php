@@ -27,7 +27,7 @@ class RegionalScholarshipResource extends Resource
 
     protected static ?string $navigationLabel = 'Regional Scholarships';
 
-    protected static ?int $navigationSort = 30;
+    protected static ?int $navigationSort = 40;
 
     public static function getNavigationGroup(): ?string
     {

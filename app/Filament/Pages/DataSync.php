@@ -46,7 +46,7 @@ class DataSync extends Page
 
     protected static ?string $navigationLabel = 'Data Sync';
 
-    protected static ?int $navigationSort = 98;
+    protected static ?int $navigationSort = 30;
 
     protected static string $view = 'filament.pages.data-sync';
 

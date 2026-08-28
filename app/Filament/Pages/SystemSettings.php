@@ -30,7 +30,7 @@ class SystemSettings extends Page implements HasForms
 
     protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?int $navigationSort = 99;
+    protected static ?int $navigationSort = 40;
 
     public ?array $data = [];
 
