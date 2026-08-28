@@ -2,13 +2,32 @@
 
 namespace App\Notifications\Auth;
 
+use Filament\Facades\Filament;
 use Illuminate\Auth\Notifications\VerifyEmail as BaseVerifyEmail;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\InteractsWithQueue;
 
 /**
- * A thin customer-facing subclass of Laravel's own VerifyEmail — the base
- * class's default verificationUrl() (a signed `verification.verify` route,
- * see routes/api.php) already does exactly what we need. Kept as its own
- * class, not sent directly, so mail copy/branding can be customised here
- * later without touching App\Models\User.
+ * Customer-facing verification notification. Laravel's `Registered` event
+ * listener (Illuminate\Auth\Listeners\SendEmailVerificationNotification)
+ * calls User::sendEmailVerificationNotification(), which sends this.
+ *
+ * The base class's verificationUrl() targets a route named
+ * `verification.verify`, which this app does not define — it's a Filament
+ * panel, so the verification route is
+ * `filament.admin.auth.email-verification.verify`. We build that signed URL
+ * via the admin panel, matching Filament\Notifications\Auth\VerifyEmail.
+ * Resolving through the named panel (not the "current" one) keeps this
+ * working from the queue worker, which has no request/panel context.
  */
-class VerifyEmail extends BaseVerifyEmail {}
+class VerifyEmail extends BaseVerifyEmail implements ShouldQueue
+{
+    use InteractsWithQueue;
+
+    protected function verificationUrl($notifiable): string
+    {
+        $panel = Filament::getCurrentPanel() ?? Filament::getPanel('admin');
+
+        return $panel->getVerifyEmailUrl($notifiable);
+    }
+}
