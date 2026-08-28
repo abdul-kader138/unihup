@@ -2,7 +2,6 @@
 
 namespace App\Notifications\Auth;
 
-use Filament\Facades\Filament;
 use Illuminate\Auth\Notifications\VerifyEmail as BaseVerifyEmail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -10,24 +9,17 @@ use Illuminate\Queue\InteractsWithQueue;
 /**
  * Customer-facing verification notification. Laravel's `Registered` event
  * listener (Illuminate\Auth\Listeners\SendEmailVerificationNotification)
- * calls User::sendEmailVerificationNotification(), which sends this.
+ * calls User::sendEmailVerificationNotification(), which sends this; the
+ * "resend" button on the verification prompt also routes through the User
+ * model method (see App\Filament\Auth\EmailVerificationPrompt).
  *
- * The base class's verificationUrl() targets a route named
- * `verification.verify`, which this app does not define — it's a Filament
- * panel, so the verification route is
- * `filament.admin.auth.email-verification.verify`. We build that signed URL
- * via the admin panel, matching Filament\Notifications\Auth\VerifyEmail.
- * Resolving through the named panel (not the "current" one) keeps this
- * working from the queue worker, which has no request/panel context.
+ * The base class's verificationUrl() builds the `verification.verify` route,
+ * which App\Http\Controllers\Auth\VerifyEmailController defines in
+ * routes/web.php WITHOUT an auth-session requirement — so the link works
+ * from any device. Kept as its own subclass only so it can be queued and so
+ * mail copy/branding can diverge from the framework default later.
  */
 class VerifyEmail extends BaseVerifyEmail implements ShouldQueue
 {
     use InteractsWithQueue;
-
-    protected function verificationUrl($notifiable): string
-    {
-        $panel = Filament::getCurrentPanel() ?? Filament::getPanel('admin');
-
-        return $panel->getVerifyEmailUrl($notifiable);
-    }
 }

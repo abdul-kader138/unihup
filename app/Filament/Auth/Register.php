@@ -33,6 +33,22 @@ class Register extends BaseRegister
     }
 
     /**
+     * No-op on purpose. Filament's default sends
+     * Filament\Notifications\Auth\VerifyEmail with a link to the panel's own
+     * verify route, which is behind Authenticate middleware and so 302s to
+     * /login when the email is opened on another device. We instead rely on
+     * the `Registered` event that parent::register() fires: Laravel's
+     * always-registered SendEmailVerificationNotification listener calls
+     * User::sendEmailVerificationNotification(), which sends
+     * App\Notifications\Auth\VerifyEmail (→ `verification.verify`, no auth
+     * required). Overriding this to nothing suppresses the duplicate email.
+     */
+    protected function sendEmailVerificationNotification(Model $user): void
+    {
+        // Intentionally empty — see the `Registered` event listener.
+    }
+
+    /**
      * @return array<int|string, string|Form>
      */
     protected function getForms(): array
