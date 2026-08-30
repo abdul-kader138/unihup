@@ -187,8 +187,23 @@ class SystemSettings extends Page implements HasForms
                                             ->disk('public')
                                             ->directory('branding')
                                             ->visibility('public')
-                                            ->acceptedFileTypes(['image/x-icon', 'image/png', 'image/svg+xml'])
-                                            ->helperText('Browser tab icon.'),
+                                            ->acceptedFileTypes([
+                                                'image/x-icon',
+                                                'image/vnd.microsoft.icon',
+                                                'image/jpeg',
+                                                'image/png',
+                                                'image/webp',
+                                                'image/svg+xml',
+                                            ])
+                                            ->mimeTypeMap([
+                                                'ico' => 'image/x-icon',
+                                                'jpg' => 'image/jpeg',
+                                                'jpeg' => 'image/jpeg',
+                                                'png' => 'image/png',
+                                                'webp' => 'image/webp',
+                                                'svg' => 'image/svg+xml',
+                                            ])
+                                            ->helperText('Browser tab icon. Accepted formats: ICO, JPEG, PNG, WebP, or SVG.'),
 
                                         FileUpload::make('favicon')
                                             ->label('Favicon (alternative)')
@@ -196,8 +211,23 @@ class SystemSettings extends Page implements HasForms
                                             ->disk('public')
                                             ->directory('branding')
                                             ->visibility('public')
-                                            ->acceptedFileTypes(['image/x-icon', 'image/png', 'image/svg+xml'])
-                                            ->helperText('Overrides the app icon for browser tabs.'),
+                                            ->acceptedFileTypes([
+                                                'image/x-icon',
+                                                'image/vnd.microsoft.icon',
+                                                'image/jpeg',
+                                                'image/png',
+                                                'image/webp',
+                                                'image/svg+xml',
+                                            ])
+                                            ->mimeTypeMap([
+                                                'ico' => 'image/x-icon',
+                                                'jpg' => 'image/jpeg',
+                                                'jpeg' => 'image/jpeg',
+                                                'png' => 'image/png',
+                                                'webp' => 'image/webp',
+                                                'svg' => 'image/svg+xml',
+                                            ])
+                                            ->helperText('Overrides the app icon for browser tabs. Accepted formats: ICO, JPEG, PNG, WebP, or SVG.'),
                                     ]),
                                 ]),
                         ]),

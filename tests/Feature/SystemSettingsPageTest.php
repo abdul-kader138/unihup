@@ -6,6 +6,8 @@ use App\Filament\Pages\SystemSettings;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -58,6 +60,25 @@ class SystemSettingsPageTest extends TestCase
         $this->assertSame('Acme Support', Setting::get('mail_from_name'));
         $this->assertSame('no-reply@acmesupport.test', Setting::get('mail_from_address'));
         $this->assertSame('staff@acmesupport.test', Setting::get('staff_notification_email'));
+    }
+
+    public function test_appearance_icons_accept_jpeg_and_webp_images(): void
+    {
+        Storage::fake('public');
+        $this->actingAsSuperAdmin();
+
+        Livewire::test(SystemSettings::class)
+            ->fillForm([
+                'app_icon' => UploadedFile::fake()->image('app-icon.jpg', 256, 256),
+                'favicon' => UploadedFile::fake()->create('favicon.webp', 100, 'image/webp'),
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertStringEndsWith('.jpg', Setting::get('app_icon'));
+        $this->assertStringEndsWith('.webp', Setting::get('favicon'));
+        Storage::disk('public')->assertExists(Setting::get('app_icon'));
+        Storage::disk('public')->assertExists(Setting::get('favicon'));
     }
 
     public function test_multiple_email_vendors_are_saved_with_one_active_vendor(): void
