@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -22,7 +23,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['first_name', 'last_name', 'email', 'phone', 'marketing_opt_in', 'password', 'avatar', 'google_id', 'email_verified_at', 'preferred_subject_id', 'preferred_degree_level'])]
+#[Fillable(['first_name', 'last_name', 'email', 'phone', 'marketing_opt_in', 'whatsapp_number', 'whatsapp_opt_in', 'whatsapp_opt_in_at', 'password', 'avatar', 'google_id', 'email_verified_at', 'preferred_subject_id', 'preferred_degree_level'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, MustVerifyEmail
 {
@@ -51,6 +52,8 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'marketing_opt_in' => 'boolean',
+            'whatsapp_opt_in' => 'boolean',
+            'whatsapp_opt_in_at' => 'datetime',
             // Encrypted at rest — plain Eloquent casts, no extra package needed.
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
@@ -110,6 +113,11 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
     public function preferredSubject(): BelongsTo
     {
         return $this->belongsTo(Subject::class, 'preferred_subject_id');
+    }
+
+    public function whatsappConversation(): HasOne
+    {
+        return $this->hasOne(WhatsAppConversation::class);
     }
 
     public function getFilamentAvatarUrl(): ?string

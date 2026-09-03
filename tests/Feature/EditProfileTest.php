@@ -72,6 +72,61 @@ class EditProfileTest extends TestCase
         $this->assertTrue(Hash::check('New-Password-123', $user->password));
     }
 
+    public function test_whatsapp_opt_in_normalises_the_number_and_stamps_the_timestamp(): void
+    {
+        $user = $this->makeStaff();
+        $this->actingAs($user);
+
+        Livewire::test(EditProfile::class)
+            ->fillForm([
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'email' => $user->email,
+                'whatsapp_number' => '+39 333 123 4567',
+                'whatsapp_opt_in' => true,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $user->refresh();
+        $this->assertSame('+393331234567', $user->whatsapp_number);
+        $this->assertTrue($user->whatsapp_opt_in);
+        $this->assertNotNull($user->whatsapp_opt_in_at);
+
+        // Opting back out clears the timestamp.
+        Livewire::test(EditProfile::class)
+            ->fillForm([
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'email' => $user->email,
+                'whatsapp_number' => '+393331234567',
+                'whatsapp_opt_in' => false,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $user->refresh();
+        $this->assertFalse($user->whatsapp_opt_in);
+        $this->assertNull($user->whatsapp_opt_in_at);
+    }
+
+    public function test_whatsapp_number_is_required_when_opting_in(): void
+    {
+        $user = $this->makeStaff();
+        $this->actingAs($user);
+
+        Livewire::test(EditProfile::class)
+            ->fillForm([
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'email' => $user->email,
+                'whatsapp_number' => '',
+                'whatsapp_opt_in' => true,
+            ])
+            ->call('save')
+            ->assertHasFormErrors(['whatsapp_number']);
+    }
+
     public function test_two_factor_actions_do_not_exist_when_globally_disabled(): void
     {
         Setting::set('two_factor_enabled', false);

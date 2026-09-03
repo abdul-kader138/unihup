@@ -13,6 +13,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Notifications\Notification;
@@ -70,6 +71,23 @@ class EditProfile extends BaseEditProfile
                                 ]),
                             ]),
 
+                        Section::make('WhatsApp Support')
+                            ->description('Chat with our advisors on WhatsApp. We only message you about your enquiries — you can opt out any time.')
+                            ->schema([
+                                TextInput::make('whatsapp_number')
+                                    ->label('WhatsApp number')
+                                    ->tel()
+                                    ->placeholder('+39 333 123 4567')
+                                    ->helperText('Full international format, starting with “+”. Spaces are fine.')
+                                    // Lenient on input (spaces/dashes allowed); mutateFormDataBeforeSave
+                                    // canonicalises to +<digits>. 8–16 digits once stripped.
+                                    ->rule('regex:/^\+?[\d\s-]{8,20}$/')
+                                    ->requiredIf('whatsapp_opt_in', true),
+                                Toggle::make('whatsapp_opt_in')
+                                    ->label('Allow UniHup to contact me on WhatsApp')
+                                    ->live(),
+                            ]),
+
                         Section::make('Two-Factor Authentication')
                             ->schema([
                                 Placeholder::make('two_factor_status')
@@ -82,6 +100,23 @@ class EditProfile extends BaseEditProfile
                     ->statePath('data'),
             ),
         ];
+    }
+
+    // Stamp/clear the opt-in timestamp from the toggle, and normalise the
+    // number to bare E.164 digits-with-plus so it matches what Meta reports
+    // on inbound webhooks (see App\Jobs\ProcessInboundWhatsAppJob).
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (array_key_exists('whatsapp_number', $data) && filled($data['whatsapp_number'])) {
+            $data['whatsapp_number'] = '+'.preg_replace('/\D+/', '', $data['whatsapp_number']);
+        }
+
+        $optedIn = (bool) ($data['whatsapp_opt_in'] ?? false);
+        $data['whatsapp_opt_in_at'] = $optedIn
+            ? ($this->getUser()->whatsapp_opt_in_at ?? now())
+            : null;
+
+        return $data;
     }
 
     // User has no `name` column (see App\Models\User's computed `name`

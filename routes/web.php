@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\WhatsAppMediaController;
+use App\Http\Controllers\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Email verification. Deliberately outside any auth middleware so the link
@@ -22,3 +24,18 @@ Route::prefix('auth/google')->name('auth.google.')->middleware('throttle:30,1')-
     Route::get('/redirect', [GoogleAuthController::class, 'redirect'])->name('redirect');
     Route::get('/callback', [GoogleAuthController::class, 'callback'])->name('callback');
 });
+
+// WhatsApp Business Cloud API webhook. No auth — Meta calls this server to
+// server. GET is Meta's one-time subscription handshake (hub.verify_token);
+// POST delivers inbound messages + delivery/read receipts and is
+// authenticated by the X-Hub-Signature-256 header (see the controller).
+// CSRF-exempt via bootstrap/app.php.
+Route::match(['get', 'post'], '/webhooks/whatsapp', WhatsAppWebhookController::class)
+    ->middleware('throttle:120,1')
+    ->name('webhooks.whatsapp');
+
+// Staff-only: stream inbound WhatsApp media (images/docs a customer sent)
+// into the inbox thread. Off the public disk, so it needs an auth check.
+Route::get('/whatsapp/media/{message}', WhatsAppMediaController::class)
+    ->middleware('auth')
+    ->name('whatsapp.media');

@@ -13,6 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // The panel is the site's only login now — see App\Filament\Auth\LoginResponse.
         $middleware->redirectGuestsTo(fn () => route('filament.admin.auth.login'));
+
+        // Meta's WhatsApp webhook is a server-to-server POST with no session;
+        // it's authenticated by X-Hub-Signature-256, not a CSRF token.
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/whatsapp',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

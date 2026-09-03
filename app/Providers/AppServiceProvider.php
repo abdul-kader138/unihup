@@ -8,6 +8,7 @@ use App\Listeners\LogAuthenticationActivity;
 use App\Listeners\LogPermissionActivity;
 use App\Models\Setting;
 use App\Policies\ActivityPolicy;
+use App\Services\WhatsApp\WhatsAppClient;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use Filament\Http\Responses\Auth\Contracts\RegistrationResponse as RegistrationResponseContract;
 use Illuminate\Support\Facades\Event;
@@ -27,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
         // The panel is the site's only login now — see App\Filament\Auth\LoginResponse.
         $this->app->bind(LoginResponseContract::class, LoginResponse::class);
         $this->app->bind(RegistrationResponseContract::class, RegistrationResponse::class);
+
+        // WhatsAppClient needs its config array injected — resolve it from
+        // config/services.php so jobs/controllers can type-hint the class.
+        $this->app->bind(WhatsAppClient::class, fn () => WhatsAppClient::fromConfig());
     }
 
     /**
