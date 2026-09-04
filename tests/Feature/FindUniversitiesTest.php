@@ -40,6 +40,40 @@ class FindUniversitiesTest extends TestCase
         $this->assertTrue($user->hasRole('panel_user'));
     }
 
+    public function test_registration_requires_acknowledgement_when_a_whatsapp_number_is_entered(): void
+    {
+        \Livewire\Livewire::test(Register::class)
+            ->fillForm([
+                'first_name' => 'Ada',
+                'last_name' => 'Lovelace',
+                'email' => 'whatsapp@example.com',
+                'whatsapp_country_code' => '+39',
+                'whatsapp_local_number' => '333 123 4567',
+                'whatsapp_opt_in' => false,
+                'password' => 'Password123',
+                'passwordConfirmation' => 'Password123',
+            ])
+            ->call('register')
+            ->assertHasFormErrors(['whatsapp_opt_in']);
+    }
+
+    public function test_registration_rejects_an_invalid_whatsapp_number(): void
+    {
+        \Livewire\Livewire::test(Register::class)
+            ->fillForm([
+                'first_name' => 'Ada',
+                'last_name' => 'Lovelace',
+                'email' => 'invalid-whatsapp@example.com',
+                'whatsapp_country_code' => '+39',
+                'whatsapp_local_number' => '123',
+                'whatsapp_opt_in' => true,
+                'password' => 'Password123',
+                'passwordConfirmation' => 'Password123',
+            ])
+            ->call('register')
+            ->assertHasFormErrors(['whatsapp_local_number']);
+    }
+
     public function test_every_registered_user_can_open_the_find_universities_page(): void
     {
         $user = User::factory()->create();

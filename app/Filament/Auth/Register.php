@@ -106,6 +106,7 @@ class Register extends BaseRegister
                             ->placeholder('333 123 4567')
                             ->helperText('Optional. Enter the number without the country code or leading trunk 0.')
                             ->requiredIf('whatsapp_opt_in', true)
+                            ->live()
                             ->rule(fn (Get $get) => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
                                 if (blank($value)) {
                                     return;
@@ -121,6 +122,11 @@ class Register extends BaseRegister
                         Toggle::make('whatsapp_opt_in')
                             ->label('I use WhatsApp and agree to receive support messages there')
                             ->helperText('You can change this later from your profile.')
+                            ->rule(fn (Get $get) => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                                if (filled($get('whatsapp_local_number')) && ! $value) {
+                                    $fail('Please acknowledge WhatsApp contact to save your number.');
+                                }
+                            })
                             ->live(),
                         $this->getPasswordFormComponent(),
                         $this->getPasswordConfirmationFormComponent(),
