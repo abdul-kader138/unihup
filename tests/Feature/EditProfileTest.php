@@ -82,7 +82,8 @@ class EditProfileTest extends TestCase
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
                 'email' => $user->email,
-                'whatsapp_number' => '+39 333 123 4567',
+                'whatsapp_country_code' => '+39',
+                'whatsapp_local_number' => '333 123 4567',
                 'whatsapp_opt_in' => true,
             ])
             ->call('save')
@@ -99,7 +100,8 @@ class EditProfileTest extends TestCase
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
                 'email' => $user->email,
-                'whatsapp_number' => '+393331234567',
+                'whatsapp_country_code' => '+39',
+                'whatsapp_local_number' => '',
                 'whatsapp_opt_in' => false,
             ])
             ->call('save')
@@ -120,11 +122,12 @@ class EditProfileTest extends TestCase
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
                 'email' => $user->email,
-                'whatsapp_number' => '',
+                'whatsapp_country_code' => '+39',
+                'whatsapp_local_number' => '',
                 'whatsapp_opt_in' => true,
             ])
             ->call('save')
-            ->assertHasFormErrors(['whatsapp_number']);
+            ->assertHasFormErrors(['whatsapp_local_number']);
     }
 
     public function test_two_factor_actions_do_not_exist_when_globally_disabled(): void

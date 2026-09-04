@@ -13,6 +13,7 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -74,17 +75,40 @@ class EditProfile extends BaseEditProfile
                         Section::make('WhatsApp Support')
                             ->description('Chat with our advisors on WhatsApp. We only message you about your enquiries — you can opt out any time.')
                             ->schema([
-                                TextInput::make('whatsapp_number')
+                                Select::make('whatsapp_country_code')
+                                    ->label('WhatsApp country code')
+                                    ->options(Register::COUNTRY_CODES)
+                                    ->searchable()
+                                    ->default('+39')
+                                    ->requiredIf('whatsapp_opt_in', true),
+                                TextInput::make('whatsapp_local_number')
                                     ->label('WhatsApp number')
                                     ->tel()
-                                    ->placeholder('+39 333 123 4567')
-                                    ->helperText('Full international format, starting with “+”. Spaces are fine.')
-                                    // Lenient on input (spaces/dashes allowed); mutateFormDataBeforeSave
-                                    // canonicalises to +<digits>. 8–16 digits once stripped.
-                                    ->rule('regex:/^\+?[\d\s-]{8,20}$/')
-                                    ->requiredIf('whatsapp_opt_in', true),
+                                    ->placeholder('333 123 4567')
+                                    ->helperText('Enter the national number, including the leading 0 where your country uses one.')
+                                    ->required(fn (Get $get): bool => (bool) $get('whatsapp_opt_in'))
+                                    ->live()
+                                    ->rule(fn (Get $get) => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                                        if (blank($value)) {
+                                            return;
+                                        }
+
+                                        $country = preg_replace('/\D+/', '', (string) $get('whatsapp_country_code')) ?? '';
+                                        $local = preg_replace('/\D+/', '', (string) $value) ?? '';
+                                        $allowedLengths = Register::NATIONAL_NUMBER_LENGTHS['+'.$country] ?? [];
+                                        $significant = ltrim($local, '0');
+
+                                        if ($local === '' || $significant === '' || ! preg_match('/^\d+$/', $local) || ! in_array(strlen($local), $allowedLengths, true) || strlen($country.$significant) > 15) {
+                                            $fail('Enter a valid WhatsApp number for the selected country.');
+                                        }
+                                    }),
                                 Toggle::make('whatsapp_opt_in')
                                     ->label('Allow UniHup to contact me on WhatsApp')
+                                    ->rule(fn (Get $get) => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
+                                        if (filled($get('whatsapp_local_number')) && ! $value) {
+                                            $fail('Please acknowledge WhatsApp contact to save your number.');
+                                        }
+                                    })
                                     ->live(),
                             ]),
 
@@ -107,14 +131,36 @@ class EditProfile extends BaseEditProfile
     // on inbound webhooks (see App\Jobs\ProcessInboundWhatsAppJob).
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        if (array_key_exists('whatsapp_number', $data) && filled($data['whatsapp_number'])) {
-            $data['whatsapp_number'] = '+'.preg_replace('/\D+/', '', $data['whatsapp_number']);
+        $countryCode = preg_replace('/\D+/', '', (string) ($data['whatsapp_country_code'] ?? '')) ?? '';
+        $localNumber = preg_replace('/\D+/', '', (string) ($data['whatsapp_local_number'] ?? '')) ?? '';
+
+        if ($countryCode !== '' && $localNumber !== '') {
+            $data['whatsapp_number'] = '+'.$countryCode.ltrim($localNumber, '0');
+        } else {
+            $data['whatsapp_number'] = null;
         }
 
         $optedIn = (bool) ($data['whatsapp_opt_in'] ?? false);
         $data['whatsapp_opt_in_at'] = $optedIn
             ? ($this->getUser()->whatsapp_opt_in_at ?? now())
             : null;
+
+        unset($data['whatsapp_country_code'], $data['whatsapp_local_number']);
+
+        return $data;
+    }
+
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $digits = preg_replace('/\D+/', '', (string) ($data['whatsapp_number'] ?? '')) ?? '';
+        $countryCode = collect(array_keys(Register::COUNTRY_CODES))
+            ->sortByDesc(fn (string $code) => strlen($code))
+            ->first(fn (string $code) => str_starts_with($digits, ltrim($code, '+')));
+
+        $data['whatsapp_country_code'] = $countryCode ?: '+39';
+        $data['whatsapp_local_number'] = $countryCode
+            ? substr($digits, strlen(ltrim($countryCode, '+')))
+            : $digits;
 
         return $data;
     }

@@ -8,6 +8,7 @@ PHP_BIN="${PHP_BIN:-php}"
 COMPOSER_BIN="${COMPOSER_BIN:-composer}"
 WEB_USER="${WEB_USER:-www-data}"
 WEB_GROUP="${WEB_GROUP:-www-data}"
+DEPLOY_BACKUP="${DEPLOY_BACKUP:-true}"
 
 cd "$APP_DIR"
 
@@ -33,6 +34,19 @@ finish() {
 trap finish EXIT
 
 echo "Deploying $BRANCH to $APP_DIR..."
+
+# Take a fresh database backup before changing code or running migrations.
+# Set DEPLOY_BACKUP=false only when a backup was deliberately made immediately
+# before this deployment (for example, by an external release pipeline).
+if [[ "$DEPLOY_BACKUP" == true ]]; then
+    if [[ ! -x deploy/backup.sh ]]; then
+        echo "Error: deploy/backup.sh is missing or not executable; refusing to deploy without a backup." >&2
+        exit 1
+    fi
+
+    echo "Creating pre-deployment database backup..."
+    ./deploy/backup.sh
+fi
 
 git fetch origin "$BRANCH"
 git checkout "$BRANCH"

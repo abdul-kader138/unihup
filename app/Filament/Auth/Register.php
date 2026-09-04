@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Model;
 class Register extends BaseRegister
 {
     /** @var array<string, string> */
-    private const COUNTRY_CODES = [
+    public const COUNTRY_CODES = [
         '+39' => 'Italy (+39)', '+44' => 'United Kingdom (+44)', '+1' => 'United States / Canada (+1)',
         '+33' => 'France (+33)', '+49' => 'Germany (+49)', '+34' => 'Spain (+34)', '+351' => 'Portugal (+351)',
         '+31' => 'Netherlands (+31)', '+32' => 'Belgium (+32)', '+41' => 'Switzerland (+41)',
@@ -45,7 +45,7 @@ class Register extends BaseRegister
     ];
 
     /** National number lengths, including the national trunk 0 where it is normally entered. */
-    private const NATIONAL_NUMBER_LENGTHS = [
+    public const NATIONAL_NUMBER_LENGTHS = [
         '+39' => [9, 10], '+44' => [10, 11], '+1' => [10], '+33' => [9, 10], '+49' => [10, 11],
         '+34' => [9], '+351' => [9], '+31' => [9], '+32' => [9], '+41' => [9], '+43' => [10, 11],
         '+30' => [10], '+48' => [9], '+40' => [9], '+359' => [9, 10], '+385' => [9], '+381' => [9],
