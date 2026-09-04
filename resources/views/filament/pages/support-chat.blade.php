@@ -9,20 +9,22 @@
          from the other side, so it should read as the same product. --}}
     <div
         wire:poll.{{ $this->pollInterval }}
-        class="flex h-[calc(100vh-13rem)] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900"
+        class="flex h-[calc(100dvh-9rem)] min-h-[32rem] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900 md:h-[calc(100vh-13rem)] md:min-h-0"
     >
         {{-- Header --}}
-        <div class="flex items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-white/10">
-            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Chat with our team
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-white/10">
+            <div>
+                <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">Chat with our team</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">Support for your university journey</div>
             </div>
             @if ($bridged)
-                <span class="text-xs text-gray-500 dark:text-gray-400">
-                    Also reaches your WhatsApp ({{ $user->whatsapp_number }})
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-500/10 dark:text-green-300">
+                    <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                    WhatsApp connected · {{ $user->whatsapp_number }}
                 </span>
             @else
-                <a href="{{ \App\Filament\Auth\EditProfile::getUrl() }}" class="text-xs font-medium text-primary-600 hover:underline dark:text-primary-400">
-                    Add your WhatsApp number
+                <a href="{{ \App\Filament\Auth\EditProfile::getUrl() }}" class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200 dark:bg-white/10 dark:text-gray-300 dark:hover:bg-white/15">
+                    Add WhatsApp number
                 </a>
             @endif
         </div>
@@ -44,7 +46,7 @@
                      (direction "in") sit on the right instead. --}}
                 <div class="flex {{ $out ? 'justify-start' : 'justify-end' }}">
                     <div @class([
-                        'max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm',
+                        'max-w-[90%] rounded-2xl px-3 py-2 text-sm shadow-sm md:max-w-[75%]',
                         'bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100' => $out,
                         'bg-primary-600 text-white' => ! $out,
                     ])>
@@ -82,7 +84,7 @@
 
         {{-- Composer --}}
         <div class="border-t border-gray-200 p-3 dark:border-white/10">
-            <form wire:submit="send" class="flex items-end gap-2">
+            <form wire:submit="send" class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-end">
                 <textarea
                     wire:model="draft"
                     rows="2"
@@ -90,7 +92,7 @@
                     x-on:keydown.enter.prevent="$wire.send()"
                     class="flex-1 resize-none rounded-lg border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5"
                 ></textarea>
-                <x-filament::button type="submit" icon="heroicon-o-paper-airplane">Send</x-filament::button>
+                <x-filament::button type="submit" icon="heroicon-o-paper-airplane" class="sm:shrink-0">Send</x-filament::button>
             </form>
         </div>
     </div>

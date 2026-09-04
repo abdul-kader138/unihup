@@ -19,6 +19,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * The panel's home page for every registered user (not just staff) — see
@@ -62,13 +63,21 @@ class FindUniversities extends Page implements HasTable
             ->filters([
                 SelectFilter::make('university_id')
                     ->label('University')
-                    ->options(fn () => University::orderBy('canonical_name')->get()->mapWithKeys(fn ($university) => [$university->id => $university->display_name]))
+                    ->options(fn () => Cache::remember('find-universities:university-options', 60, fn () => University::query()
+                        ->orderByRaw('COALESCE(canonical_name, name)')
+                        ->get(['id', 'name', 'canonical_name'])
+                        ->mapWithKeys(fn ($university) => [$university->id => $university->display_name])
+                        ->all()))
                     ->searchable()
                     ->preload(),
 
                 SelectFilter::make('subject_id')
                     ->label('Subject')
-                    ->options(fn () => Subject::orderBy('canonical_name')->get()->mapWithKeys(fn ($subject) => [$subject->id => $subject->display_name]))
+                    ->options(fn () => Cache::remember('find-universities:subject-options', 60, fn () => Subject::query()
+                        ->orderByRaw('COALESCE(canonical_name, name)')
+                        ->get(['id', 'name', 'canonical_name'])
+                        ->mapWithKeys(fn ($subject) => [$subject->id => $subject->display_name])
+                        ->all()))
                     ->searchable()
                     ->preload()
                     ->default(fn () => auth()->user()->preferred_subject_id),

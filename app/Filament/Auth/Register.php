@@ -4,6 +4,7 @@ namespace App\Filament\Auth;
 
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Pages\Auth\Register as BaseRegister;
 use Illuminate\Database\Eloquent\Model;
@@ -25,6 +26,16 @@ class Register extends BaseRegister
 {
     protected function handleRegistration(array $data): Model
     {
+        $number = trim((string) ($data['whatsapp_number'] ?? ''));
+        $optedIn = (bool) ($data['whatsapp_opt_in'] ?? false);
+
+        if ($number !== '') {
+            $digits = preg_replace('/\D+/', '', $number) ?? '';
+            $data['whatsapp_number'] = '+'.$digits;
+        }
+
+        $data['whatsapp_opt_in_at'] = $optedIn ? now() : null;
+
         $user = parent::handleRegistration($data);
 
         $user->assignRole('panel_user');
@@ -60,6 +71,28 @@ class Register extends BaseRegister
                         $this->getFirstNameFormComponent(),
                         $this->getLastNameFormComponent(),
                         $this->getEmailFormComponent(),
+                        TextInput::make('whatsapp_number')
+                            ->label('Mobile / WhatsApp number')
+                            ->tel()
+                            ->placeholder('+39 333 123 4567')
+                            ->helperText('Optional. Use the full international number, including country code. Spaces and dashes are accepted.')
+                            ->requiredIf('whatsapp_opt_in', true)
+                            ->rule(fn () => function (string $attribute, mixed $value, \Closure $fail): void {
+                                if (blank($value)) {
+                                    return;
+                                }
+
+                                $raw = trim((string) $value);
+                                $digits = preg_replace('/\D+/', '', $raw) ?? '';
+
+                                if (! str_starts_with($raw, '+') || ! preg_match('/^[1-9]\d{7,14}$/', $digits)) {
+                                    $fail('Enter a valid international number in E.164 format, for example +39 333 123 4567.');
+                                }
+                            }),
+                        Toggle::make('whatsapp_opt_in')
+                            ->label('I use WhatsApp and agree to receive support messages there')
+                            ->helperText('You can change this later from your profile.')
+                            ->live(),
                         $this->getPasswordFormComponent(),
                         $this->getPasswordConfirmationFormComponent(),
                     ])

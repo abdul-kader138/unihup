@@ -30,57 +30,67 @@ class UniversityLogoEnricher implements DataEnricher
     {
         $updated = 0;
         $skipped = 0;
+        $reasons = [];
 
         University::whereNull('logo')
             ->whereNotNull('website_url')
-            ->get(['id', 'slug', 'website_url'])
-            ->each(function (University $university) use (&$updated, &$skipped) {
-                if ($this->fetchAndStore($university)) {
-                    $updated++;
-                } else {
+            ->select(['id', 'name', 'slug', 'website_url'])
+            ->chunkById(25, function ($universities) use (&$updated, &$skipped, &$reasons) {
+                foreach ($universities as $university) {
+                    $reason = $this->fetchAndStore($university);
+                    if ($reason === null) {
+                        $updated++;
+                        continue;
+                    }
+
                     $skipped++;
+                    $reasons[] = "{$university->name}: {$reason}";
                 }
             });
+
+        $detail = $reasons === [] ? '' : ' Reasons: '.implode('; ', array_slice($reasons, 0, 8)).(count($reasons) > 8 ? '; …' : '');
 
         return new EnrichmentResult(
             updated: $updated,
             skipped: $skipped,
-            summary: "Fetched a logo for {$updated} universities from their own site icon (skipped {$skipped} with no usable icon).",
+            summary: "Fetched a logo for {$updated} universities from their own site icon (skipped {$skipped} with no usable icon).{$detail}",
         );
     }
 
-    private function fetchAndStore(University $university): bool
+    private function fetchAndStore(University $university): ?string
     {
         $iconUrl = $this->discoverIconUrl($university->website_url);
 
         if (! $iconUrl) {
-            return false;
+            return 'no icon URL found';
         }
 
         try {
             $response = Http::timeout(10)->withUserAgent(self::USER_AGENT)->get($iconUrl);
         } catch (\Throwable) {
-            return false;
+            return 'request failed or timed out';
         }
 
         if (! $response->successful()) {
-            return false;
+            return "HTTP {$response->status()}";
         }
 
         $contentType = $response->header('Content-Type');
         $body = $response->body();
 
         if (! $this->looksLikeImage($contentType, $body)) {
-            return false;
+            return 'response was not an image';
         }
 
         $extension = $this->extensionFromContentType($contentType) ?? 'png';
         $path = "logos/{$university->slug}.{$extension}";
 
-        Storage::disk('public')->put($path, $body);
+        if (! Storage::disk('public')->put($path, $body)) {
+            return 'could not write to public storage';
+        }
         $university->update(['logo' => $path]);
 
-        return true;
+        return null;
     }
 
     private function discoverIconUrl(string $siteUrl): ?string
