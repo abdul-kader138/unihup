@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\DegreeProgram;
 use App\Models\Subject;
+use App\Models\University;
 use App\Models\UniversityRanking;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -61,13 +62,13 @@ class FindUniversities extends Page implements HasTable
             ->filters([
                 SelectFilter::make('university_id')
                     ->label('University')
-                    ->relationship('university', 'name')
+                    ->options(fn () => University::orderBy('canonical_name')->get()->mapWithKeys(fn ($university) => [$university->id => $university->display_name]))
                     ->searchable()
                     ->preload(),
 
                 SelectFilter::make('subject_id')
                     ->label('Subject')
-                    ->options(fn () => Subject::orderBy('name')->pluck('name', 'id'))
+                    ->options(fn () => Subject::orderBy('canonical_name')->get()->mapWithKeys(fn ($subject) => [$subject->id => $subject->display_name]))
                     ->searchable()
                     ->preload()
                     ->default(fn () => auth()->user()->preferred_subject_id),
@@ -100,8 +101,9 @@ class FindUniversities extends Page implements HasTable
                             TextColumn::make('university.name')
                                 ->label('University')
                                 ->weight('bold')
-                                ->searchable()
+                                ->searchable(['name', 'canonical_name'])
                                 ->sortable()
+                                ->formatStateUsing(fn ($state, DegreeProgram $record) => $record->university->display_name)
                                 ->wrap(),
 
                             TextColumn::make('degree_level')
@@ -147,11 +149,12 @@ class FindUniversities extends Page implements HasTable
 
                     TextColumn::make('subject.name')
                         ->label('Subject')
-                        ->searchable()
+                        ->searchable(['name', 'canonical_name'])
                         ->badge()
                         ->color('gray')
                         ->limit(28)
-                        ->tooltip(fn (DegreeProgram $record) => $record->subject->name),
+                        ->formatStateUsing(fn ($state, DegreeProgram $record) => $record->subject->display_name)
+                        ->tooltip(fn (DegreeProgram $record) => $record->subject->display_name),
 
                     TextColumn::make('admission_type')
                         ->label('Admission')

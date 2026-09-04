@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\University;
+use App\Support\CanonicalAcademicNames;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -36,7 +37,7 @@ class UniversitySeeder extends Seeder
         foreach (self::UNIVERSITIES as $university) {
             University::updateOrCreate(
                 ['slug' => Str::slug($university['name'])],
-                $university,
+                [...$university, 'canonical_name' => CanonicalAcademicNames::university($university['name'])],
             );
         }
     }

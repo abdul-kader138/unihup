@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Subject;
+use App\Support\CanonicalAcademicNames;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -31,7 +32,7 @@ class SubjectSeeder extends Seeder
         foreach (self::SUBJECTS as $name) {
             Subject::updateOrCreate(
                 ['slug' => Str::slug($name)],
-                ['name' => $name],
+                ['name' => $name, 'canonical_name' => CanonicalAcademicNames::subject($name)],
             );
         }
     }

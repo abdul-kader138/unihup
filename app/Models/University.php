@@ -12,7 +12,12 @@ class University extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'slug', 'city', 'region', 'website_url', 'description', 'logo'];
+    protected $fillable = ['name', 'canonical_name', 'slug', 'city', 'region', 'website_url', 'description', 'logo'];
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->canonical_name ?: $this->name;
+    }
 
     public function degreePrograms(): HasMany
     {

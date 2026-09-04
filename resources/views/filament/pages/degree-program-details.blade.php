@@ -18,7 +18,7 @@
         <img src="{{ $university->display_logo_url }}" alt="" class="h-12 w-12 shrink-0 rounded-lg object-contain ring-1 ring-gray-200 dark:ring-white/10">
         <div>
             <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">University</div>
-            <div class="text-base font-medium">{{ $university->name }} &middot; {{ $university->city }}</div>
+            <div class="text-base font-medium">{{ $university->display_name }} &middot; {{ $university->city }}</div>
             @if ($university->website_url)
                 <a href="{{ $university->website_url }}" target="_blank" rel="noopener" class="text-primary-600 hover:underline dark:text-primary-400">
                     {{ $university->website_url }}
@@ -40,7 +40,7 @@
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <div>
             <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Subject</div>
-            <div>{{ $program->subject->name }}</div>
+            <div>{{ $program->subject->display_name }}</div>
         </div>
         <div>
             <div class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Level</div>

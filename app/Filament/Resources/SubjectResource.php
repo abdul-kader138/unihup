@@ -57,7 +57,10 @@ class SubjectResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('name')->searchable()->sortable(),
+                TextColumn::make('name')
+                    ->formatStateUsing(fn ($state, Subject $record) => $record->display_name)
+                    ->searchable(['name', 'canonical_name'])
+                    ->sortable(),
                 TextColumn::make('slug')->searchable(),
                 TextColumn::make('degree_programs_count')
                     ->counts('degreePrograms')

@@ -7,6 +7,7 @@ use App\Contracts\UniversityDataImporter;
 use App\Models\DegreeProgram;
 use App\Models\Subject;
 use App\Models\University;
+use App\Support\CanonicalAcademicNames;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -163,6 +164,7 @@ class MurUstatImporter implements UniversityDataImporter
 
             $records[$key] = [
                 'name' => $info['name'],
+                'canonical_name' => CanonicalAcademicNames::university($info['name']),
                 'slug' => Str::slug($info['name']),
                 'city' => $info['city'] ?? 'Italy',
                 'region' => $info['region'],
@@ -175,13 +177,12 @@ class MurUstatImporter implements UniversityDataImporter
             return [];
         }
 
-        University::upsert(array_values($records), uniqueBy: ['slug'], update: ['name', 'city', 'region', 'updated_at']);
-
-        $idsBySlug = University::whereIn('slug', array_column($records, 'slug'))->pluck('id', 'slug');
-
         $idsByKey = [];
         foreach ($records as $key => $record) {
-            $idsByKey[$key] = $idsBySlug[$record['slug']] ?? null;
+            $university = University::firstOrNew(['canonical_name' => $record['canonical_name']]);
+            $university->fill($university->exists ? collect($record)->except('slug')->all() : $record);
+            $university->save();
+            $idsByKey[$key] = $university->id;
         }
 
         return array_filter($idsByKey);
@@ -194,6 +195,7 @@ class MurUstatImporter implements UniversityDataImporter
 
         $records = array_map(fn (string $name) => [
             'name' => $name,
+            'canonical_name' => CanonicalAcademicNames::subject($name),
             'slug' => Str::slug($name),
             'updated_at' => now(),
             'created_at' => now(),
@@ -203,12 +205,15 @@ class MurUstatImporter implements UniversityDataImporter
             return [];
         }
 
-        Subject::upsert($records, uniqueBy: ['slug'], update: ['name', 'updated_at']);
+        $idsByName = [];
+        foreach ($records as $record) {
+            $subject = Subject::firstOrNew(['canonical_name' => $record['canonical_name']]);
+            $subject->fill($subject->exists ? collect($record)->except('slug')->all() : $record);
+            $subject->save();
+            $idsByName[$record['name']] = $subject->id;
+        }
 
-        return Subject::whereIn('slug', array_column($records, 'slug'))
-            ->get(['id', 'name'])
-            ->pluck('id', 'name')
-            ->all();
+        return $idsByName;
     }
 
     /**

@@ -10,7 +10,12 @@ class Subject extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'slug'];
+    protected $fillable = ['name', 'canonical_name', 'slug'];
+
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->canonical_name ?: $this->name;
+    }
 
     public function degreePrograms(): HasMany
     {

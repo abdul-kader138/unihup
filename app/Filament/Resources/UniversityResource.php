@@ -85,7 +85,10 @@ class UniversityResource extends Resource
                     ->circular()
                     ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->name)),
 
-                TextColumn::make('name')->searchable()->sortable(),
+                TextColumn::make('name')
+                    ->formatStateUsing(fn ($state, University $record) => $record->display_name)
+                    ->searchable(['name', 'canonical_name'])
+                    ->sortable(),
                 TextColumn::make('city')->searchable()->sortable(),
                 TextColumn::make('region')->searchable()->toggleable(),
                 TextColumn::make('degree_programs_count')

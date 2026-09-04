@@ -133,9 +133,16 @@ class DegreeProgramResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('university.name')->searchable()->sortable(),
+                TextColumn::make('university.name')
+                    ->formatStateUsing(fn ($state, DegreeProgram $record) => $record->university->display_name)
+                    ->searchable(['name', 'canonical_name'])
+                    ->sortable(),
                 TextColumn::make('name')->label('Program')->searchable(),
-                TextColumn::make('subject.name')->label('Subject')->searchable()->sortable(),
+                TextColumn::make('subject.name')
+                    ->label('Subject')
+                    ->formatStateUsing(fn ($state, DegreeProgram $record) => $record->subject->display_name)
+                    ->searchable(['name', 'canonical_name'])
+                    ->sortable(),
                 TextColumn::make('degree_level')
                     ->badge()
                     ->formatStateUsing(fn (string $state) => DegreeProgram::DEGREE_LEVELS[$state] ?? $state),
