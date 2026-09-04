@@ -13,9 +13,9 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ShieldSeeder::class,
-            /* SubjectSeeder::class,
+            SubjectSeeder::class,
             UniversitySeeder::class,
-            DegreeProgramSeeder::class, */
+            DegreeProgramSeeder::class,
             RegionalScholarshipSeeder::class,
             UniversityRankingSeeder::class,
         ]);
