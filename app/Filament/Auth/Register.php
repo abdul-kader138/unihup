@@ -44,6 +44,19 @@ class Register extends BaseRegister
         '+60' => 'Malaysia (+60)', '+66' => 'Thailand (+66)', '+62' => 'Indonesia (+62)',
     ];
 
+    /** National number lengths, including the national trunk 0 where it is normally entered. */
+    private const NATIONAL_NUMBER_LENGTHS = [
+        '+39' => [9, 10], '+44' => [10, 11], '+1' => [10], '+33' => [9, 10], '+49' => [10, 11],
+        '+34' => [9], '+351' => [9], '+31' => [9], '+32' => [9], '+41' => [9], '+43' => [10, 11],
+        '+30' => [10], '+48' => [9], '+40' => [9], '+359' => [9, 10], '+385' => [9], '+381' => [9],
+        '+90' => [10], '+380' => [9], '+7' => [10], '+91' => [10], '+92' => [10, 11], '+880' => [11],
+        '+86' => [11], '+81' => [10, 11], '+82' => [9, 10], '+61' => [9, 10], '+64' => [9, 10],
+        '+55' => [10, 11], '+52' => [10], '+54' => [10], '+27' => [9, 10], '+20' => [10, 11],
+        '+212' => [9], '+216' => [8], '+234' => [10, 11], '+254' => [9, 10], '+971' => [9],
+        '+966' => [9], '+972' => [9, 10], '+65' => [8], '+60' => [9, 10], '+66' => [9, 10],
+        '+62' => [10, 11],
+    ];
+
     protected function handleRegistration(array $data): Model
     {
         $countryCode = preg_replace('/\D+/', '', (string) ($data['whatsapp_country_code'] ?? '')) ?? '';
@@ -51,7 +64,7 @@ class Register extends BaseRegister
         $optedIn = (bool) ($data['whatsapp_opt_in'] ?? false);
 
         if ($optedIn && $countryCode !== '' && $localNumber !== '') {
-            $data['whatsapp_number'] = '+'.$countryCode.$localNumber;
+            $data['whatsapp_number'] = '+'.$countryCode.ltrim($localNumber, '0');
         } else {
             $data['whatsapp_number'] = null;
         }
@@ -115,7 +128,11 @@ class Register extends BaseRegister
                                 $country = preg_replace('/\D+/', '', (string) $get('whatsapp_country_code')) ?? '';
                                 $local = preg_replace('/\D+/', '', (string) $value) ?? '';
 
-                                if ($local === '' || str_starts_with($local, '0') || ! preg_match('/^[1-9]\d{5,14}$/', $local) || strlen($country.$local) > 15) {
+                                $countryCode = '+'.$country;
+                                $allowedLengths = self::NATIONAL_NUMBER_LENGTHS[$countryCode] ?? [];
+                                $significant = ltrim($local, '0');
+
+                                if ($local === '' || $significant === '' || ! preg_match('/^\d+$/', $local) || ! in_array(strlen($local), $allowedLengths, true) || strlen($country.$significant) > 15) {
                                     $fail('Enter a valid WhatsApp number for the selected country.');
                                 }
                             }),
