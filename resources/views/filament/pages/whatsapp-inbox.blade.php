@@ -15,10 +15,10 @@
 
     <div
         wire:poll.{{ $this->pollInterval }}
-        class="flex h-[calc(100vh-13rem)] overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900"
+        class="flex h-[calc(100dvh-9rem)] min-h-[32rem] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900 md:h-[calc(100vh-13rem)] md:min-h-0 md:flex-row"
     >
         {{-- ── Conversation list ─────────────────────────────────────────── --}}
-        <aside class="flex w-72 shrink-0 flex-col border-r border-gray-200 dark:border-white/10">
+        <aside class="flex max-h-56 w-full shrink-0 flex-col border-b border-gray-200 dark:border-white/10 md:max-h-none md:w-72 md:border-b-0 md:border-r">
             <div class="border-b border-gray-200 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-white/10 dark:text-gray-400">
                 Conversations
             </div>
@@ -32,21 +32,38 @@
                     <button
                         type="button"
                         wire:click="selectConversation({{ $conversation->id }})"
-                        class="flex w-full flex-col gap-0.5 px-4 py-3 text-left text-sm transition hover:bg-gray-50 dark:hover:bg-white/5 {{ $active?->id === $conversation->id ? 'bg-primary-50 dark:bg-primary-500/10' : '' }}"
+                        @class([
+                            'flex w-full flex-col gap-0.5 px-4 py-3 text-left text-sm transition',
+                            'hover:bg-gray-50 dark:hover:bg-white/5' => $active?->id !== $conversation->id,
+                            'bg-indigo-50 dark:bg-indigo-500/20' => $active?->id === $conversation->id,
+                        ])
                     >
                         <div class="flex items-center justify-between gap-2">
-                            <span class="truncate font-medium text-gray-900 dark:text-gray-100">
+                            <span @class([
+                                'truncate font-medium',
+                                'text-indigo-950 dark:text-indigo-50' => $active?->id === $conversation->id,
+                                'text-gray-900 dark:text-gray-100' => $active?->id !== $conversation->id,
+                            ])>
                                 {{ $conversation->user?->name ?: ($conversation->wa_contact_name ?: '+' . $conversation->wa_contact_id) }}
                             </span>
                             @if ($waiting)
                                 <span class="h-2 w-2 shrink-0 rounded-full bg-primary-500"></span>
                             @endif
                         </div>
-                        <div class="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <div @class([
+                            'flex items-center justify-between gap-2 text-xs',
+                            'text-indigo-900/70 dark:text-indigo-100/75' => $active?->id === $conversation->id,
+                            'text-gray-500 dark:text-gray-400' => $active?->id !== $conversation->id,
+                        ])>
                             <span class="truncate">+{{ $conversation->wa_contact_id }}</span>
                             <span>{{ optional($conversation->last_inbound_at ?? $conversation->updated_at)->diffForHumans(short: true) }}</span>
                         </div>
-                        <span class="mt-0.5 w-fit rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase {{ $statusClasses[$conversation->status] ?? '' }}">
+                        <span @class([
+                            'mt-0.5 w-fit rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase',
+                            $active?->id === $conversation->id
+                                ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-400/20 dark:text-indigo-100'
+                                : ($statusClasses[$conversation->status] ?? ''),
+                        ])>
                             {{ $conversation->status }}
                         </span>
                     </button>
@@ -63,15 +80,15 @@
         </aside>
 
         {{-- ── Active thread ─────────────────────────────────────────────── --}}
-        <section class="flex flex-1 flex-col">
+        <section class="flex min-w-0 flex-1 flex-col">
             @if ($active === null)
                 <div class="flex flex-1 items-center justify-center text-sm text-gray-400">
                     Select a conversation to view the thread.
                 </div>
             @else
                 {{-- Header --}}
-                <div class="flex items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-white/10">
-                    <div>
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-white/10">
+                    <div class="min-w-0">
                         <div class="font-semibold text-gray-900 dark:text-gray-100">
                             {{ $active->user?->name ?: ($active->wa_contact_name ?: 'Unknown') }}
                         </div>
@@ -80,7 +97,7 @@
                             @if ($active->assignee) · assigned to {{ $active->assignee->name }} @endif
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex shrink-0 items-center gap-2">
                         <x-filament::button size="xs" color="gray" wire:click="assignToMe">Assign to me</x-filament::button>
                         @if ($active->status === 'closed')
                             <x-filament::button size="xs" color="gray" wire:click="setStatus('open')">Re-open</x-filament::button>
@@ -103,7 +120,7 @@
                         @php $out = $message->direction === 'out'; @endphp
                         <div class="flex {{ $out ? 'justify-end' : 'justify-start' }}">
                             <div @class([
-                                'max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm',
+                                'max-w-[90%] rounded-2xl px-3 py-2 text-sm shadow-sm md:max-w-[75%]',
                                 'bg-primary-600 text-white' => $out,
                                 'bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100' => ! $out,
                             ])>
@@ -138,14 +155,14 @@
                 {{-- Composer --}}
                 <div class="border-t border-gray-200 p-3 dark:border-white/10">
                     @if (! $active->wa_contact_id || $active->withinServiceWindow())
-                        <form wire:submit="sendReply" class="flex items-end gap-2">
+                        <form wire:submit="sendReply" class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-end">
                             <textarea
                                 wire:model="reply"
                                 rows="2"
                                 placeholder="Type a reply…"
                                 class="flex-1 resize-none rounded-lg border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5"
                             ></textarea>
-                            <x-filament::button type="submit" icon="heroicon-o-paper-airplane">Send</x-filament::button>
+                            <x-filament::button type="submit" icon="heroicon-o-paper-airplane" class="sm:shrink-0">Send</x-filament::button>
                         </form>
                     @else
                         <div class="flex items-center justify-between gap-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
