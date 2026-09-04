@@ -159,6 +159,26 @@ class WhatsAppInboxTest extends TestCase
         $this->assertFalse($component->instance()->hasMoreMessages);
     }
 
+    public function test_replying_to_a_portal_only_conversation_never_queues_a_whatsapp_send(): void
+    {
+        Queue::fake();
+        $this->actingAsSuperAdmin();
+
+        // No wa_contact_id and no last_inbound_at — e.g. a Support Chat user
+        // who has never given a WhatsApp number.
+        $conversation = WhatsAppConversation::create(['status' => WhatsAppConversation::STATUS_OPEN]);
+
+        Livewire::test(WhatsAppInbox::class)
+            ->call('selectConversation', $conversation->id)
+            ->set('reply', 'Thanks for reaching out — happy to help.')
+            ->call('sendReply');
+
+        $message = $conversation->messages()->firstOrFail();
+        $this->assertSame(WhatsAppMessage::STATUS_SENT, $message->status);
+
+        Queue::assertNothingPushed();
+    }
+
     public function test_sending_replies_too_fast_is_rate_limited(): void
     {
         Queue::fake();

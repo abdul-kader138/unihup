@@ -50,6 +50,17 @@ class SendWhatsAppMessageJob implements ShouldQueue
 
         $to = $message->conversation->wa_contact_id;
 
+        // A portal-only conversation (a Support Chat user with no WhatsApp
+        // number on file) has no address to send to. WhatsAppInbox::sendReply()
+        // already skips dispatching this job in that case — this is a
+        // defense-in-depth guard so a null recipient never reaches
+        // WhatsAppClient::normalizeNumber(), which requires a string.
+        if ($to === null) {
+            $message->update(['status' => WhatsAppMessage::STATUS_FAILED, 'error' => 'Conversation has no WhatsApp number']);
+
+            return;
+        }
+
         try {
             $waId = $this->templateName !== null
                 ? $client->sendTemplate($to, $this->templateName, $this->templateLanguage)

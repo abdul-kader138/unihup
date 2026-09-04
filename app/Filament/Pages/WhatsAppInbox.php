@@ -188,7 +188,13 @@ class WhatsAppInbox extends Page
             return;
         }
 
-        if (! $conversation->withinServiceWindow()) {
+        // The 24h free-form window is a WhatsApp API rule — meaningless for a
+        // portal-only conversation (no wa_contact_id, i.e. a Support Chat
+        // user with no WhatsApp number on file). Only enforce it when a real
+        // WhatsApp send is actually about to happen.
+        $hasWhatsApp = $conversation->wa_contact_id !== null;
+
+        if ($hasWhatsApp && ! $conversation->withinServiceWindow()) {
             Notification::make()
                 ->warning()
                 ->title('Outside the 24-hour window')
@@ -206,12 +212,17 @@ class WhatsAppInbox extends Page
             'direction' => WhatsAppMessage::DIRECTION_OUT,
             'type' => 'text',
             'body' => $text,
-            'status' => WhatsAppMessage::STATUS_QUEUED,
+            // Portal-only reply: nothing to deliver, so there's no queued
+            // step — it's "sent" the moment it's shown on Support Chat.
+            'status' => $hasWhatsApp ? WhatsAppMessage::STATUS_QUEUED : WhatsAppMessage::STATUS_SENT,
             'sent_by' => auth()->id(),
         ]);
 
         WhatsAppMessageCreated::dispatch($message);
-        SendWhatsAppMessageJob::dispatch($message);
+
+        if ($hasWhatsApp) {
+            SendWhatsAppMessageJob::dispatch($message);
+        }
 
         $this->reply = '';
         $conversation->update(['status' => WhatsAppConversation::STATUS_PENDING]);
@@ -239,7 +250,10 @@ class WhatsAppInbox extends Page
     {
         $conversation = $this->activeConversation;
 
-        if ($conversation === null || $this->tooManySends()) {
+        // Only meaningful for a real WhatsApp conversation — the blade only
+        // offers this button when wa_contact_id is set, this is the
+        // server-side backstop.
+        if ($conversation === null || $conversation->wa_contact_id === null || $this->tooManySends()) {
             return;
         }
 

@@ -76,7 +76,7 @@
                             {{ $active->user?->name ?: ($active->wa_contact_name ?: 'Unknown') }}
                         </div>
                         <div class="text-xs text-gray-500 dark:text-gray-400">
-                            +{{ $active->wa_contact_id }}
+                            {{ $active->wa_contact_id ? '+'.$active->wa_contact_id : 'Portal only — no WhatsApp number' }}
                             @if ($active->assignee) · assigned to {{ $active->assignee->name }} @endif
                         </div>
                     </div>
@@ -91,7 +91,7 @@
                 </div>
 
                 {{-- Messages --}}
-                <div class="flex flex-1 flex-col gap-2 overflow-y-auto bg-gray-50 px-4 py-4 dark:bg-gray-950/40">
+                <div class="flex flex-1 flex-col gap-2 overflow-y-auto bg-gray-50 px-4 py-4 dark:bg-gray-950">
                     @if ($this->hasMoreMessages)
                         <button type="button" wire:click="loadEarlierMessages"
                             class="mx-auto mb-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10">
@@ -105,7 +105,7 @@
                             <div @class([
                                 'max-w-[75%] rounded-2xl px-3 py-2 text-sm shadow-sm',
                                 'bg-primary-600 text-white' => $out,
-                                'bg-white text-gray-900 dark:bg-white/10 dark:text-gray-100' => ! $out,
+                                'bg-white text-gray-900 dark:bg-gray-700 dark:text-gray-100' => ! $out,
                             ])>
                                 @if ($message->media_path)
                                     @if (str_starts_with((string) $message->media_mime, 'image/'))
@@ -137,7 +137,7 @@
 
                 {{-- Composer --}}
                 <div class="border-t border-gray-200 p-3 dark:border-white/10">
-                    @if ($active->withinServiceWindow())
+                    @if (! $active->wa_contact_id || $active->withinServiceWindow())
                         <form wire:submit="sendReply" class="flex items-end gap-2">
                             <textarea
                                 wire:model="reply"
