@@ -157,10 +157,6 @@ class MurUstatImporter implements UniversityDataImporter
             }
 
             $col = array_flip($header);
-            if (! isset($fields[$col['NUMERO']])) {
-                continue;
-            }
-
             $rows[] = [
                 'year' => (int) $this->field($fields, $col, ['ANNO_VALIDITA', 'ANNO']),
                 'university_key' => $this->normalizeKey($this->field($fields, $col, ['NomeOperativo', 'Ateneo'])),
