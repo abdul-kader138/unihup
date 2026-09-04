@@ -13,12 +13,39 @@
         ];
     @endphp
 
+    <style>
+        /* Keep the inbox usable when the separately-built Filament theme is stale. */
+        .whatsapp-inbox-layout {
+            flex-direction: column;
+        }
+
+        .whatsapp-inbox-conversations {
+            width: 100%;
+            max-height: 14rem;
+            border-right-width: 0;
+            border-bottom-width: 1px;
+        }
+
+        @media (min-width: 40rem) {
+            .whatsapp-inbox-layout {
+                flex-direction: row;
+            }
+
+            .whatsapp-inbox-conversations {
+                width: 18rem;
+                max-height: none;
+                border-right-width: 1px;
+                border-bottom-width: 0;
+            }
+        }
+    </style>
+
     <div
         wire:poll.{{ $this->pollInterval }}
-        class="flex h-[calc(100dvh-9rem)] min-h-[32rem] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900 md:h-[calc(100vh-13rem)] md:min-h-0 md:flex-row"
+        class="whatsapp-inbox-layout flex h-[calc(100dvh-9rem)] min-h-[32rem] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900 md:h-[calc(100vh-13rem)] md:min-h-0 md:flex-row"
     >
         {{-- ── Conversation list ─────────────────────────────────────────── --}}
-        <aside class="flex max-h-56 w-full shrink-0 flex-col border-b border-gray-200 dark:border-white/10 md:max-h-none md:w-72 md:border-b-0 md:border-r">
+        <aside class="whatsapp-inbox-conversations flex max-h-56 w-full shrink-0 flex-col border-b border-gray-200 dark:border-white/10 md:max-h-none md:w-72 md:border-b-0 md:border-r">
             <div class="border-b border-gray-200 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-white/10 dark:text-gray-400">
                 Conversations
             </div>
