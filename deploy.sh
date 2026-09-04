@@ -64,6 +64,21 @@ COMPOSER_ALLOW_SUPERUSER=1 "$COMPOSER_BIN" install \
 if [[ -f package-lock.json ]]; then
     npm ci
     npm run build
+
+    # The admin panel's Filament theme is a SEPARATE Tailwind build (v3, its
+    # own tailwind.config.js under resources/css/filament/admin) that `npm
+    # run build` above never touches — that only compiles resources/css/app.css
+    # via Vite. Without this, any new Tailwind class used in a Filament page
+    # added since the last theme rebuild (e.g. dark: variants on
+    # WhatsAppInbox / SupportChat) silently renders unstyled — the class
+    # just isn't in the checked-in public/css/filament/admin/theme.css.
+    if [[ -f resources/css/filament/admin/theme.css ]]; then
+        npx --yes tailwindcss@3 \
+            -i resources/css/filament/admin/theme.css \
+            -c resources/css/filament/admin/tailwind.config.js \
+            -o public/css/filament/admin/theme.css \
+            --minify
+    fi
 fi
 
 "$PHP_BIN" artisan optimize:clear
