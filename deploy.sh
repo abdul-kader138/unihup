@@ -110,9 +110,6 @@ fi
 "$PHP_BIN" artisan storage:link
 "$PHP_BIN" artisan optimize
 "$PHP_BIN" artisan queue:restart
-"$PHP_BIN" universities:merge-duplicates
-"$PHP_BIN" universities:merge-duplicates --apply
-
 # Installs/keeps the persistent queue worker current. queue:restart above
 # only signals an ALREADY-RUNNING worker to gracefully restart between
 # jobs — it starts nothing on its own, so this is what actually processes
