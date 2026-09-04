@@ -68,6 +68,15 @@ fi
 
 "$PHP_BIN" artisan optimize:clear
 "$PHP_BIN" artisan migrate --force
+
+# Regenerates Filament Shield's permissions/policies from whatever
+# resources/pages/widgets exist in this deploy — idempotent (safe to run
+# every time) and what keeps App\Filament\Pages\WhatsAppInbox's
+# `page_WhatsAppInbox` permission in sync as pages are added or renamed.
+# Existing role grants are preserved; only the permission set itself is
+# regenerated.
+"$PHP_BIN" artisan shield:generate --all --panel=admin --no-interaction --minimal
+
 "$PHP_BIN" artisan db:seed --force
 "$PHP_BIN" artisan storage:link
 "$PHP_BIN" artisan optimize
@@ -97,6 +106,27 @@ if [[ -f deploy/unihup-scheduler.service && -f deploy/unihup-scheduler.timer ]] 
     systemctl enable --now unihup-scheduler.timer
 fi
 
+# Reverb WebSocket server — powers live updates on Support Chat and the
+# WhatsApp Inbox. Only installed once `composer require laravel/reverb` has
+# been run; until then the chat pages fall back to wire:poll and this block
+# is skipped. `systemctl restart` on every deploy is deliberate — it drops
+# open sockets so clients reconnect against fresh code (same reason the
+# queue worker is restarted, not just signalled).
+if [[ -f deploy/unihup-reverb.service ]] \
+    && grep -q '"laravel/reverb"' composer.json \
+    && command -v systemctl >/dev/null 2>&1; then
+    install -m 644 deploy/unihup-reverb.service /etc/systemd/system/unihup-reverb.service
+    systemctl daemon-reload
+    systemctl enable unihup-reverb
+    systemctl restart unihup-reverb
+elif systemctl list-unit-files 2>/dev/null | grep -q '^unihup-reverb\.service'; then
+    # laravel/reverb was removed but the unit is still installed — stop it so
+    # a dead `reverb:start` isn't left flapping under Restart=always.
+    systemctl disable --now unihup-reverb || true
+    rm -f /etc/systemd/system/unihup-reverb.service
+    systemctl daemon-reload
+fi
+
 # Nightly database backup — see deploy/backup.sh.
 if [[ -f deploy/unihup-backup.service && -f deploy/unihup-backup.timer ]] && command -v systemctl >/dev/null 2>&1; then
     install -m 644 deploy/unihup-backup.service /etc/systemd/system/unihup-backup.service
@@ -115,6 +145,15 @@ fi
 
 nginx -t
 systemctl restart nginx
+
+# Reverb needs its own WebSocket location proxied in nginx (see the deploy
+# runbook) — this only warns, it never edits nginx config for you.
+if grep -q '^BROADCAST_CONNECTION=reverb' .env 2>/dev/null \
+    && ! grep -rq 'location /app' /etc/nginx/sites-enabled/ 2>/dev/null; then
+    echo "Warning: BROADCAST_CONNECTION=reverb but no 'location /app' WebSocket proxy" >&2
+    echo "was found under /etc/nginx/sites-enabled/. Realtime chat will not connect" >&2
+    echo "until that's added — see the Reverb section of the deploy notes." >&2
+fi
 
 "$PHP_BIN" artisan up
 maintenance_enabled=false

@@ -14,7 +14,7 @@
     @endphp
 
     <div
-        wire:poll.10s
+        wire:poll.{{ $this->pollInterval }}
         class="flex h-[calc(100vh-13rem)] overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-gray-900"
     >
         {{-- ── Conversation list ─────────────────────────────────────────── --}}

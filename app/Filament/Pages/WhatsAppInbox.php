@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Events\WhatsAppMessageCreated;
 use App\Jobs\SendWhatsAppMessageJob;
 use App\Models\WhatsAppConversation;
 use App\Models\WhatsAppMessage;
@@ -62,6 +63,23 @@ class WhatsAppInbox extends Page
         $superAdmin = (string) config('filament-shield.super_admin.name', 'super_admin');
 
         return $user->hasRole($superAdmin) || $user->can('page_WhatsAppInbox');
+    }
+
+    /**
+     * Live push on any new message when Reverb is configured; the wire:poll
+     * fallback in the view covers the plain-database setup.
+     *
+     * @return array<string, string>
+     */
+    public function getListeners(): array
+    {
+        return ['echo-private:whatsapp.inbox,.message.created' => '$refresh'];
+    }
+
+    #[Computed]
+    public function pollInterval(): string
+    {
+        return config('broadcasting.default') === 'null' ? '6s' : '30s';
     }
 
     public static function getNavigationBadge(): ?string
@@ -132,6 +150,7 @@ class WhatsAppInbox extends Page
             'sent_by' => auth()->id(),
         ]);
 
+        WhatsAppMessageCreated::dispatch($message);
         SendWhatsAppMessageJob::dispatch($message);
 
         $this->reply = '';
@@ -158,6 +177,7 @@ class WhatsAppInbox extends Page
             'sent_by' => auth()->id(),
         ]);
 
+        WhatsAppMessageCreated::dispatch($message);
         SendWhatsAppMessageJob::dispatch($message, $template, $language);
 
         $conversation->update(['status' => WhatsAppConversation::STATUS_PENDING]);

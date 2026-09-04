@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\WhatsAppMessageCreated;
 use App\Models\User;
 use App\Models\WhatsAppConversation;
 use App\Models\WhatsAppMessage;
@@ -95,7 +96,7 @@ class ProcessInboundWhatsAppJob implements ShouldQueue
             $body = '['.$type.' message]';
         }
 
-        $conversation->messages()->create([
+        $inbound = $conversation->messages()->create([
             'direction' => WhatsAppMessage::DIRECTION_IN,
             'wa_message_id' => $waMessageId,
             'type' => $type,
@@ -104,6 +105,8 @@ class ProcessInboundWhatsAppJob implements ShouldQueue
             'media_mime' => $mediaMime,
             'status' => WhatsAppMessage::STATUS_DELIVERED,
         ]);
+
+        WhatsAppMessageCreated::dispatch($inbound);
 
         $sentAt = isset($message['timestamp'])
             ? Carbon::createFromTimestamp((int) $message['timestamp'])

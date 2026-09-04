@@ -9,6 +9,7 @@ use App\Filament\Auth\Register;
 use App\Filament\Auth\ResetPassword;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\FindUniversities;
+use App\Http\Middleware\RedirectNonAdminsFromDashboard;
 use App\Models\Setting;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Enums\ThemeMode;
@@ -22,6 +23,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -78,6 +80,10 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::STYLES_AFTER,
                 fn () => self::resolveAdminPanelModeStyles(),
             )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn () => self::resolveEchoScript(),
+            )
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('15rem')
             ->navigationGroups([
@@ -131,7 +137,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->authMiddleware([
                 Authenticate::class,
-                \App\Http\Middleware\RedirectNonAdminsFromDashboard::class,
+                RedirectNonAdminsFromDashboard::class,
             ]);
     }
 
@@ -324,11 +330,56 @@ CSS;
         return $base.$custom;
     }
 
+    // Live chat updates (Support Chat page + WhatsApp Inbox). Only emitted
+    // when BROADCAST_CONNECTION=reverb and the Reverb client keys are set —
+    // otherwise the pages fall back to wire:poll and this stays out of the
+    // DOM entirely. Pusher + Echo are pulled from a CDN so no npm build step
+    // is required to switch realtime on.
+    protected static function resolveEchoScript(): string
+    {
+        try {
+            if (config('broadcasting.default') !== 'reverb') {
+                return '';
+            }
+
+            $cfg = config('broadcasting.connections.reverb');
+        } catch (\Throwable) {
+            return '';
+        }
+
+        $client = $cfg['client'] ?? $cfg['options'] ?? [];
+
+        if (blank($cfg['key'] ?? null) || blank($client['host'] ?? null)) {
+            return '';
+        }
+
+        $port = (int) ($client['port'] ?? 443);
+
+        $params = json_encode([
+            'broadcaster' => 'reverb',
+            'key' => $cfg['key'],
+            'wsHost' => $client['host'],
+            'wsPort' => $port,
+            'wssPort' => $port,
+            'forceTLS' => ($client['scheme'] ?? 'https') === 'https',
+            'enabledTransports' => ['ws', 'wss'],
+        ], JSON_THROW_ON_ERROR);
+
+        return <<<HTML
+        <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.19.0/dist/echo.iife.js"></script>
+        <script>
+            window.Pusher = Pusher;
+            window.Echo = new Echo({$params});
+        </script>
+        HTML;
+    }
+
     // Only render the button once GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET are
     // actually set — otherwise clicking it just throws (Socialite has
     // nothing to redirect to), which is a worse experience than not
     // showing it on a fresh install that hasn't configured OAuth yet.
-    protected static function resolveGoogleAuthButton(): \Illuminate\Contracts\View\View|string
+    protected static function resolveGoogleAuthButton(): View|string
     {
         if (blank(config('services.google.client_id')) || blank(config('services.google.client_secret'))) {
             return '';
