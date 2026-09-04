@@ -90,4 +90,50 @@ class SupportChatTest extends TestCase
         $this->assertSame($first, $second);
         $this->assertSame(1, WhatsAppConversation::where('user_id', $user->id)->count());
     }
+
+    public function test_only_the_most_recent_messages_load_until_asked_for_more(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $conversation = WhatsAppConversation::create(['user_id' => $user->id, 'status' => WhatsAppConversation::STATUS_OPEN]);
+
+        for ($i = 0; $i < 35; $i++) {
+            $conversation->messages()->create([
+                'direction' => WhatsAppMessage::DIRECTION_IN,
+                'type' => 'text',
+                'body' => "message {$i}",
+                'status' => WhatsAppMessage::STATUS_DELIVERED,
+            ]);
+        }
+
+        $component = Livewire::test(SupportChat::class);
+
+        $this->assertCount(30, $component->instance()->messages);
+        $this->assertTrue($component->instance()->hasMoreMessages);
+
+        $component->call('loadEarlierMessages');
+
+        $this->assertCount(35, $component->instance()->messages);
+        $this->assertFalse($component->instance()->hasMoreMessages);
+        // Oldest-first once loaded, same as the thread reads top to bottom.
+        $this->assertSame('message 0', $component->instance()->messages->first()->body);
+    }
+
+    public function test_sending_messages_too_fast_is_rate_limited(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $component = Livewire::test(SupportChat::class);
+
+        for ($i = 0; $i < 20; $i++) {
+            $component->set('draft', "message {$i}")->call('send');
+        }
+
+        $this->assertSame(20, WhatsAppMessage::count());
+
+        $component->set('draft', 'one too many')->call('send');
+        $this->assertSame(20, WhatsAppMessage::count());
+    }
 }

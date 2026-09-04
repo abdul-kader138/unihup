@@ -29,6 +29,13 @@
 
         {{-- Messages --}}
         <div class="flex flex-1 flex-col gap-2 overflow-y-auto bg-gray-50 px-4 py-4 dark:bg-gray-950/40">
+            @if ($this->hasMoreMessages)
+                <button type="button" wire:click="loadEarlierMessages"
+                    class="mx-auto mb-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10">
+                    Load earlier messages
+                </button>
+            @endif
+
             @forelse ($this->messages as $message)
                 @php($out = $message->direction === 'out')
                 {{-- Mirrored from WhatsAppInbox's own left/right: there the

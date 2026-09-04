@@ -3,12 +3,12 @@
 namespace App\Jobs;
 
 use App\Events\WhatsAppMessageCreated;
+use App\Filament\Pages\WhatsAppInbox;
 use App\Models\User;
 use App\Models\WhatsAppConversation;
 use App\Models\WhatsAppMessage;
 use App\Services\WhatsApp\WhatsAppClient;
 use Carbon\Carbon;
-use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -107,6 +107,7 @@ class ProcessInboundWhatsAppJob implements ShouldQueue
         ]);
 
         WhatsAppMessageCreated::dispatch($inbound);
+        WhatsAppInbox::forgetBadgeCache();
 
         $sentAt = isset($message['timestamp'])
             ? Carbon::createFromTimestamp((int) $message['timestamp'])
@@ -186,39 +187,12 @@ class ProcessInboundWhatsAppJob implements ShouldQueue
         return $conversation;
     }
 
+    // Delegates to WhatsAppConversation::notifyStaff() (also used by
+    // App\Filament\Pages\SupportChat) rather than keeping its own copy of the
+    // staff-resolution logic — that method caches the role/permission lookup,
+    // which matters here since this runs on every inbound webhook message.
     private function notifyStaff(WhatsAppConversation $conversation, string $preview): void
     {
-        $recipients = $conversation->assignee
-            ? collect([$conversation->assignee])
-            : $this->inboxStaff();
-
-        if ($recipients->isEmpty()) {
-            return;
-        }
-
-        $name = $conversation->wa_contact_name ?: $conversation->wa_contact_id;
-
-        FilamentNotification::make()
-            ->title("WhatsApp message from {$name}")
-            ->icon('heroicon-o-chat-bubble-left-right')
-            ->body(Str::limit($preview, 120))
-            ->sendToDatabase($recipients);
-    }
-
-    /** Everyone allowed into the inbox: the page permission holders + super admins. */
-    private function inboxStaff()
-    {
-        $superAdmin = (string) config('filament-shield.super_admin.name', 'super_admin');
-        $staff = collect();
-
-        foreach ([fn () => User::role($superAdmin)->get(), fn () => User::permission('page_WhatsAppInbox')->get()] as $resolve) {
-            try {
-                $staff = $staff->merge($resolve());
-            } catch (Throwable) {
-                // role / permission not created yet (php artisan shield:generate)
-            }
-        }
-
-        return $staff->unique('id')->values();
+        $conversation->notifyStaff($preview);
     }
 }

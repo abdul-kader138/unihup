@@ -9,8 +9,12 @@ use App\Models\WhatsAppMessage;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
+use Livewire\WithPagination;
 
 /**
  * Staff-facing WhatsApp support console: a conversation list on the left, the
@@ -25,7 +29,7 @@ use Livewire\Attributes\Computed;
  */
 class WhatsAppInbox extends Page
 {
-    use HasPageShield;
+    use HasPageShield, WithPagination;
 
     protected static ?string $navigationIcon = 'heroicon-o-chat-bubble-left-right';
 
@@ -42,6 +46,10 @@ class WhatsAppInbox extends Page
     public ?int $activeConversationId = null;
 
     public string $reply = '';
+
+    // Same "show N, grow on demand" pattern as SupportChat — a thread with a
+    // long history shouldn't be fetched in full on every wire:poll tick.
+    public int $messagesToShow = 40;
 
     public static function getNavigationGroup(): ?string
     {
@@ -82,26 +90,44 @@ class WhatsAppInbox extends Page
         return config('broadcasting.default') === 'null' ? '6s' : '30s';
     }
 
+    /**
+     * Runs on every panel page load for every staff member with access (the
+     * badge callback fires wherever the nav item is rendered, not just on
+     * this page) — cached briefly so it's one query per 15s across all of
+     * them rather than one per request.
+     */
     public static function getNavigationBadge(): ?string
     {
-        $waiting = WhatsAppConversation::query()
-            ->where('status', '!=', WhatsAppConversation::STATUS_CLOSED)
-            ->where(fn ($q) => $q
-                ->whereColumn('last_inbound_at', '>', 'last_outbound_at')
-                ->orWhere(fn ($q2) => $q2->whereNotNull('last_inbound_at')->whereNull('last_outbound_at')))
-            ->count();
+        $waiting = Cache::remember('whatsapp-inbox:badge-count', 15, function () {
+            return WhatsAppConversation::query()
+                ->where('status', '!=', WhatsAppConversation::STATUS_CLOSED)
+                ->where(fn ($q) => $q
+                    ->whereColumn('last_inbound_at', '>', 'last_outbound_at')
+                    ->orWhere(fn ($q2) => $q2->whereNotNull('last_inbound_at')->whereNull('last_outbound_at')))
+                ->count();
+        });
 
         return $waiting > 0 ? (string) $waiting : null;
     }
 
+    /** Called wherever a conversation's waiting-state might change, so the badge doesn't wait out its own TTL. */
+    public static function forgetBadgeCache(): void
+    {
+        Cache::forget('whatsapp-inbox:badge-count');
+    }
+
+    /**
+     * simplePaginate rather than paginate(): no total-row COUNT query, which
+     * matters once this table has thousands of conversations behind it — a
+     * prev/next footer is all a narrow sidebar list needs anyway.
+     */
     #[Computed]
-    public function conversations(): Collection
+    public function conversations(): Paginator
     {
         return WhatsAppConversation::query()
             ->with('user')
             ->orderByRaw('COALESCE(last_inbound_at, last_outbound_at, created_at) desc')
-            ->limit(100)
-            ->get();
+            ->simplePaginate(20);
     }
 
     #[Computed]
@@ -112,15 +138,45 @@ class WhatsAppInbox extends Page
         }
 
         return WhatsAppConversation::query()
-            ->with(['user', 'assignee', 'messages' => fn ($q) => $q->orderBy('created_at')])
+            ->with(['user', 'assignee'])
             ->find($this->activeConversationId);
+    }
+
+    /** The most recent $messagesToShow messages in the active thread, oldest first. */
+    #[Computed]
+    public function activeMessages(): Collection
+    {
+        if ($this->activeConversationId === null) {
+            return collect();
+        }
+
+        return WhatsAppMessage::where('conversation_id', $this->activeConversationId)
+            ->latest('created_at')
+            ->limit($this->messagesToShow)
+            ->get()
+            ->reverse()
+            ->values();
+    }
+
+    /** Cheap proxy (see SupportChat::hasMoreMessages()) rather than a COUNT query on every poll. */
+    #[Computed]
+    public function hasMoreMessages(): bool
+    {
+        return $this->activeMessages->count() >= $this->messagesToShow;
+    }
+
+    public function loadEarlierMessages(): void
+    {
+        $this->messagesToShow += 40;
+        unset($this->activeMessages, $this->hasMoreMessages);
     }
 
     public function selectConversation(int $id): void
     {
         $this->activeConversationId = $id;
         $this->reply = '';
-        unset($this->activeConversation);
+        $this->messagesToShow = 40;
+        unset($this->activeConversation, $this->activeMessages, $this->hasMoreMessages);
     }
 
     public function sendReply(): void
@@ -142,6 +198,10 @@ class WhatsAppInbox extends Page
             return;
         }
 
+        if ($this->tooManySends()) {
+            return;
+        }
+
         $message = $conversation->messages()->create([
             'direction' => WhatsAppMessage::DIRECTION_OUT,
             'type' => 'text',
@@ -155,14 +215,31 @@ class WhatsAppInbox extends Page
 
         $this->reply = '';
         $conversation->update(['status' => WhatsAppConversation::STATUS_PENDING]);
-        unset($this->activeConversation);
+        self::forgetBadgeCache();
+        unset($this->activeConversation, $this->activeMessages, $this->hasMoreMessages);
+    }
+
+    /** 60 sends/minute per staff member — a real support agent, not a runaway loop. */
+    private function tooManySends(): bool
+    {
+        $key = 'whatsapp-inbox-send:'.auth()->id();
+
+        if (RateLimiter::tooManyAttempts($key, 60)) {
+            Notification::make()->warning()->title('Sending too fast — please slow down')->send();
+
+            return true;
+        }
+
+        RateLimiter::hit($key, 60);
+
+        return false;
     }
 
     public function sendReopenTemplate(): void
     {
         $conversation = $this->activeConversation;
 
-        if ($conversation === null) {
+        if ($conversation === null || $this->tooManySends()) {
             return;
         }
 
@@ -181,7 +258,8 @@ class WhatsAppInbox extends Page
         SendWhatsAppMessageJob::dispatch($message, $template, $language);
 
         $conversation->update(['status' => WhatsAppConversation::STATUS_PENDING]);
-        unset($this->activeConversation);
+        self::forgetBadgeCache();
+        unset($this->activeConversation, $this->activeMessages, $this->hasMoreMessages);
 
         Notification::make()->success()->title('Re-open template queued')->send();
     }
@@ -203,6 +281,7 @@ class WhatsAppInbox extends Page
         }
 
         $this->activeConversation?->update(['status' => $status]);
+        self::forgetBadgeCache();
         unset($this->activeConversation, $this->conversations);
     }
 }

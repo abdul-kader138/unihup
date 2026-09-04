@@ -7,8 +7,10 @@ use App\Models\User;
 use App\Models\WhatsAppConversation;
 use App\Models\WhatsAppMessage;
 use App\Services\WhatsApp\WhatsAppClient;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
 
 /**
@@ -42,6 +44,11 @@ class SupportChat extends Page
 
     public int $conversationId = 0;
 
+    // How many of the most recent messages are shown. Kept small and grown
+    // on demand (loadEarlierMessages()) rather than loading a whole
+    // conversation's history on every poll — some threads run for months.
+    public int $messagesToShow = 30;
+
     public function mount(): void
     {
         $this->conversationId = $this->resolveConversation()->id;
@@ -65,14 +72,37 @@ class SupportChat extends Page
     #[Computed]
     public function conversation(): WhatsAppConversation
     {
-        return WhatsAppConversation::with(['messages' => fn ($q) => $q->orderBy('created_at')])
-            ->findOrFail($this->conversationId);
+        return WhatsAppConversation::findOrFail($this->conversationId);
     }
 
+    /** The most recent $messagesToShow messages, oldest first. */
     #[Computed]
     public function messages(): Collection
     {
-        return $this->conversation->messages;
+        return WhatsAppMessage::where('conversation_id', $this->conversationId)
+            ->latest('created_at')
+            ->limit($this->messagesToShow)
+            ->get()
+            ->reverse()
+            ->values();
+    }
+
+    /**
+     * Cheap proxy instead of a separate COUNT query: if the last fetch came
+     * back full, there's *probably* more before it. Worst case a "Load
+     * earlier" click that finds nothing new — far cheaper than counting the
+     * whole thread on every poll.
+     */
+    #[Computed]
+    public function hasMoreMessages(): bool
+    {
+        return $this->messages->count() >= $this->messagesToShow;
+    }
+
+    public function loadEarlierMessages(): void
+    {
+        $this->messagesToShow += 30;
+        unset($this->messages, $this->hasMoreMessages);
     }
 
     public function send(): void
@@ -82,6 +112,23 @@ class SupportChat extends Page
         if ($body === '') {
             return;
         }
+
+        // 20 messages/minute per user — generous for a real conversation,
+        // enough to stop a runaway client-side loop or a scripted flood from
+        // hammering the DB and the staff notification fan-out.
+        $key = 'support-chat-send:'.auth()->id();
+
+        if (RateLimiter::tooManyAttempts($key, 20)) {
+            Notification::make()
+                ->warning()
+                ->title('Sending too fast')
+                ->body('Please wait a moment before sending more messages.')
+                ->send();
+
+            return;
+        }
+
+        RateLimiter::hit($key, 60);
 
         $conversation = $this->conversation;
 
@@ -96,9 +143,10 @@ class SupportChat extends Page
 
         WhatsAppMessageCreated::dispatch($message);
         $conversation->notifyStaff($body);
+        WhatsAppInbox::forgetBadgeCache();
 
         $this->draft = '';
-        unset($this->conversation, $this->messages);
+        unset($this->conversation, $this->messages, $this->hasMoreMessages);
     }
 
     /**

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -80,20 +81,33 @@ class WhatsAppConversation extends Model
             ->sendToDatabase($recipients);
     }
 
-    /** Everyone allowed into the inbox: the page permission holders + super admins. */
+    /**
+     * Everyone allowed into the inbox: the page permission holders + super
+     * admins. Cached briefly — role/permission assignments change rarely,
+     * but this runs on every single inbound and portal-typed message, which
+     * at scale is the more frequent event by far.
+     */
     public static function staffRecipients(): Collection
     {
-        $superAdmin = (string) config('filament-shield.super_admin.name', 'super_admin');
-        $staff = collect();
+        return Cache::remember('whatsapp:staff-recipients', 300, function () {
+            $superAdmin = (string) config('filament-shield.super_admin.name', 'super_admin');
+            $staff = collect();
 
-        foreach ([fn () => User::role($superAdmin)->get(), fn () => User::permission('page_WhatsAppInbox')->get()] as $resolve) {
-            try {
-                $staff = $staff->merge($resolve());
-            } catch (Throwable) {
-                // role / permission not created yet (php artisan shield:generate)
+            foreach ([fn () => User::role($superAdmin)->get(), fn () => User::permission('page_WhatsAppInbox')->get()] as $resolve) {
+                try {
+                    $staff = $staff->merge($resolve());
+                } catch (Throwable) {
+                    // role / permission not created yet (php artisan shield:generate)
+                }
             }
-        }
 
-        return $staff->unique('id')->values();
+            return $staff->unique('id')->values();
+        });
+    }
+
+    /** Bust the cache above — call after any role/permission grant that touches inbox access. */
+    public static function forgetStaffRecipientsCache(): void
+    {
+        Cache::forget('whatsapp:staff-recipients');
     }
 }

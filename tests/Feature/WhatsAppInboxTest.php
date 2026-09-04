@@ -117,4 +117,64 @@ class WhatsAppInboxTest extends TestCase
         $this->assertSame(auth()->id(), $conversation->fresh()->assigned_to);
         $this->assertSame(WhatsAppConversation::STATUS_CLOSED, $conversation->fresh()->status);
     }
+
+    public function test_the_conversation_list_paginates_instead_of_loading_everything(): void
+    {
+        $this->actingAsSuperAdmin();
+
+        // One more than a single page (20) — the point is only 20 load per
+        // request, not that they all render in the initial query.
+        for ($i = 0; $i < 21; $i++) {
+            $this->conversation(['wa_contact_id' => "39333000{$i}"]);
+        }
+
+        $page1 = Livewire::test(WhatsAppInbox::class);
+        $this->assertCount(20, $page1->instance()->conversations->items());
+        $this->assertTrue($page1->instance()->conversations->hasMorePages());
+    }
+
+    public function test_only_the_most_recent_messages_load_until_asked_for_more(): void
+    {
+        $this->actingAsSuperAdmin();
+        $conversation = $this->conversation();
+
+        for ($i = 0; $i < 45; $i++) {
+            $conversation->messages()->create([
+                'direction' => WhatsAppMessage::DIRECTION_IN,
+                'type' => 'text',
+                'body' => "message {$i}",
+                'status' => WhatsAppMessage::STATUS_DELIVERED,
+            ]);
+        }
+
+        $component = Livewire::test(WhatsAppInbox::class)
+            ->call('selectConversation', $conversation->id);
+
+        $this->assertCount(40, $component->instance()->activeMessages);
+        $this->assertTrue($component->instance()->hasMoreMessages);
+
+        $component->call('loadEarlierMessages');
+
+        $this->assertCount(45, $component->instance()->activeMessages);
+        $this->assertFalse($component->instance()->hasMoreMessages);
+    }
+
+    public function test_sending_replies_too_fast_is_rate_limited(): void
+    {
+        Queue::fake();
+        $this->actingAsSuperAdmin();
+        $conversation = $this->conversation();
+
+        $component = Livewire::test(WhatsAppInbox::class)->call('selectConversation', $conversation->id);
+
+        for ($i = 0; $i < 60; $i++) {
+            $component->set('reply', "reply {$i}")->call('sendReply');
+        }
+
+        $this->assertSame(60, $conversation->messages()->count());
+
+        // The 61st in the same minute is throttled — no new row.
+        $component->set('reply', 'one too many')->call('sendReply');
+        $this->assertSame(60, $conversation->fresh()->messages()->count());
+    }
 }
