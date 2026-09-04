@@ -94,7 +94,7 @@ class MurUstatImporter implements UniversityDataImporter
 
         foreach ($this->downloadCsvRows(self::ATENEI_URL) as $fields) {
             if ($header === null) {
-                $header = $fields;
+                $header = $this->normalizeHeader($fields);
 
                 continue;
             }
@@ -127,7 +127,13 @@ class MurUstatImporter implements UniversityDataImporter
 
         foreach ($this->downloadCsvRows(self::CORSI_URL) as $fields) {
             if ($header === null) {
-                $header = $fields;
+                $header = $this->normalizeHeader($fields);
+
+                foreach (['ANNO_VALIDITA', 'NomeOperativo', 'DES', 'NUMERO', 'NOME_CORSO', 'ACCESSO'] as $required) {
+                    if (! array_key_exists($required, array_flip($header))) {
+                        throw new \RuntimeException('MUR course CSV is missing required column "'.$required.'". Found: '.implode(', ', $header));
+                    }
+                }
 
                 continue;
             }
@@ -306,8 +312,19 @@ class MurUstatImporter implements UniversityDataImporter
 
         $body = preg_replace('/^\x{FEFF}/u', '', $body);
 
+        $delimiter = null;
         foreach (preg_split('/\r\n|\n|\r/', trim($body)) as $line) {
-            yield str_getcsv($line, ';');
+            if ($delimiter === null) {
+                $delimiter = substr_count($line, ';') >= substr_count($line, ',') ? ';' : ',';
+            }
+
+            yield str_getcsv($line, $delimiter);
         }
+    }
+
+    /** @param list<string> $header */
+    private function normalizeHeader(array $header): array
+    {
+        return array_map(fn (string $value) => trim(preg_replace('/^\x{FEFF}/u', '', $value)), $header);
     }
 }
