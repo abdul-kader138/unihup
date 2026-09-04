@@ -100,26 +100,36 @@ class MurUstatImporter implements UniversityDataImporter
             }
 
             $col = array_flip($header);
-            if (($fields[$col['Status']] ?? null) !== 'A') {
+            $status = $this->field($fields, $col, ['Status', 'STATO']);
+            if ($status !== 'A') {
                 continue; // skip merged/closed institutions
             }
 
-            $key = $this->normalizeKey($fields[$col['NomeOperativo']] ?? '');
+            $shortName = $this->field($fields, $col, ['NomeOperativo', 'Ateneo', 'Nome']);
+            $fullName = $this->field($fields, $col, ['NomeEsteso', 'NomeAteneo', 'Denominazione']) ?: $shortName;
+            $key = $this->normalizeKey($shortName);
             if ($key === '') {
                 continue;
             }
 
-            $institutions[$key] = [
-                'name' => trim($fields[$col['NomeEsteso']] ?? $fields[$col['NomeOperativo']]),
-                'city' => $this->titleCase($fields[$col['CITTA']] ?? null),
-                'region' => $this->titleCase($fields[$col['REGIONE']] ?? null),
+            $institution = [
+                'name' => trim($fullName),
+                'city' => $this->titleCase($this->field($fields, $col, ['CITTA', 'Citta', 'Comune'])),
+                'region' => $this->titleCase($this->field($fields, $col, ['REGIONE', 'Regione'])),
             ];
+            $institutions[$key] = $institution;
+
+            // Newer course files identify the institution by its full name.
+            $fullKey = $this->normalizeKey($fullName);
+            if ($fullKey !== '') {
+                $institutions[$fullKey] = $institution;
+            }
         }
 
         return $institutions;
     }
 
-    /** @return list<array{year: int, university_key: string, subject: string, class_code: string, course_name: string, admission_type: string}> */
+    /** @return list<array{year: int, university_key: string, subject: string, class_code: string, course_name: string, language: string, admission_type: string}> */
     private function fetchCourseRows(): array
     {
         $header = null;
@@ -129,9 +139,17 @@ class MurUstatImporter implements UniversityDataImporter
             if ($header === null) {
                 $header = $this->normalizeHeader($fields);
 
-                foreach (['ANNO_VALIDITA', 'NomeOperativo', 'DES', 'NUMERO', 'NOME_CORSO', 'ACCESSO'] as $required) {
-                    if (! array_key_exists($required, array_flip($header))) {
-                        throw new \RuntimeException('MUR course CSV is missing required column "'.$required.'". Found: '.implode(', ', $header));
+                $requiredAliases = [
+                    'year' => ['ANNO_VALIDITA', 'ANNO'],
+                    'university' => ['NomeOperativo', 'Ateneo'],
+                    'subject' => ['DES', 'GruppoDisciplinare', 'NomeClasse'],
+                    'class' => ['NUMERO', 'Classe'],
+                    'course' => ['NOME_CORSO', 'Corso'],
+                    'admission' => ['ACCESSO'],
+                ];
+                foreach ($requiredAliases as $label => $aliases) {
+                    if ($this->column($header, $aliases) === null) {
+                        throw new \RuntimeException('MUR course CSV is missing a required '.$label.' column. Found: '.implode(', ', $header));
                     }
                 }
 
@@ -144,12 +162,13 @@ class MurUstatImporter implements UniversityDataImporter
             }
 
             $rows[] = [
-                'year' => (int) $fields[$col['ANNO_VALIDITA']],
-                'university_key' => $this->normalizeKey($fields[$col['NomeOperativo']] ?? ''),
-                'subject' => trim($fields[$col['DES']] ?? ''),
-                'class_code' => trim($fields[$col['NUMERO']] ?? ''),
-                'course_name' => trim($fields[$col['NOME_CORSO']] ?? ''),
-                'admission_type' => trim($fields[$col['ACCESSO']] ?? '') === 'accesso libero' ? 'open' : 'restricted',
+                'year' => (int) $this->field($fields, $col, ['ANNO_VALIDITA', 'ANNO']),
+                'university_key' => $this->normalizeKey($this->field($fields, $col, ['NomeOperativo', 'Ateneo'])),
+                'subject' => trim($this->field($fields, $col, ['DES', 'GruppoDisciplinare', 'NomeClasse'])),
+                'class_code' => trim($this->field($fields, $col, ['NUMERO', 'Classe'])),
+                'course_name' => trim($this->field($fields, $col, ['NOME_CORSO', 'Corso'])),
+                'language' => $this->normalizeLanguage($this->field($fields, $col, ['LINGUA']) ?: 'Italian'),
+                'admission_type' => mb_strtolower(trim($this->field($fields, $col, ['ACCESSO']))) === 'accesso libero' ? 'open' : 'restricted',
             ];
         }
 
@@ -251,7 +270,7 @@ class MurUstatImporter implements UniversityDataImporter
                 'subject_id' => $subjectId,
                 'degree_level' => $degreeLevel,
                 'name' => $row['course_name'],
-                'language' => 'Italian',
+                'language' => $row['language'],
                 'duration_years' => $durationYears,
                 'admission_type' => $row['admission_type'],
                 'source_url' => self::SOURCE_URL,
@@ -283,6 +302,33 @@ class MurUstatImporter implements UniversityDataImporter
     private function normalizeKey(string $value): string
     {
         return Str::slug(trim($value));
+    }
+
+    /** @param array<int, string> $fields @param array<string, int> $columns @param list<string> $aliases */
+    private function field(array $fields, array $columns, array $aliases): string
+    {
+        $index = $this->column(array_keys($columns), $aliases);
+
+        return $index === null ? '' : trim((string) ($fields[$columns[$index]] ?? ''));
+    }
+
+    /** @param list<string> $headers @param list<string> $aliases */
+    private function column(array $headers, array $aliases): ?string
+    {
+        foreach ($aliases as $alias) {
+            if (in_array($alias, $headers, true)) {
+                return $alias;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeLanguage(string $language): string
+    {
+        return str_contains(mb_strtolower($language), 'ingles') || str_contains(mb_strtolower($language), 'english')
+            ? 'English'
+            : 'Italian';
     }
 
     private function titleCase(?string $value): ?string
