@@ -3,9 +3,11 @@
 namespace App\Filament\Auth;
 
 use Filament\Forms\Components\Component;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Pages\Auth\Register as BaseRegister;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,17 +26,38 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Register extends BaseRegister
 {
+    /** @var array<string, string> */
+    private const COUNTRY_CODES = [
+        '+39' => 'Italy (+39)', '+44' => 'United Kingdom (+44)', '+1' => 'United States / Canada (+1)',
+        '+33' => 'France (+33)', '+49' => 'Germany (+49)', '+34' => 'Spain (+34)', '+351' => 'Portugal (+351)',
+        '+31' => 'Netherlands (+31)', '+32' => 'Belgium (+32)', '+41' => 'Switzerland (+41)',
+        '+43' => 'Austria (+43)', '+30' => 'Greece (+30)', '+48' => 'Poland (+48)', '+40' => 'Romania (+40)',
+        '+359' => 'Bulgaria (+359)', '+385' => 'Croatia (+385)', '+381' => 'Serbia (+381)',
+        '+90' => 'Türkiye (+90)', '+380' => 'Ukraine (+380)', '+7' => 'Russia / Kazakhstan (+7)',
+        '+91' => 'India (+91)', '+92' => 'Pakistan (+92)', '+880' => 'Bangladesh (+880)',
+        '+86' => 'China (+86)', '+81' => 'Japan (+81)', '+82' => 'South Korea (+82)',
+        '+61' => 'Australia (+61)', '+64' => 'New Zealand (+64)', '+55' => 'Brazil (+55)',
+        '+52' => 'Mexico (+52)', '+54' => 'Argentina (+54)', '+27' => 'South Africa (+27)',
+        '+20' => 'Egypt (+20)', '+212' => 'Morocco (+212)', '+216' => 'Tunisia (+216)',
+        '+234' => 'Nigeria (+234)', '+254' => 'Kenya (+254)', '+971' => 'United Arab Emirates (+971)',
+        '+966' => 'Saudi Arabia (+966)', '+972' => 'Israel (+972)', '+65' => 'Singapore (+65)',
+        '+60' => 'Malaysia (+60)', '+66' => 'Thailand (+66)', '+62' => 'Indonesia (+62)',
+    ];
+
     protected function handleRegistration(array $data): Model
     {
-        $number = trim((string) ($data['whatsapp_number'] ?? ''));
+        $countryCode = preg_replace('/\D+/', '', (string) ($data['whatsapp_country_code'] ?? '')) ?? '';
+        $localNumber = preg_replace('/\D+/', '', (string) ($data['whatsapp_local_number'] ?? '')) ?? '';
         $optedIn = (bool) ($data['whatsapp_opt_in'] ?? false);
 
-        if ($number !== '') {
-            $digits = preg_replace('/\D+/', '', $number) ?? '';
-            $data['whatsapp_number'] = '+'.$digits;
+        if ($optedIn && $countryCode !== '' && $localNumber !== '') {
+            $data['whatsapp_number'] = '+'.$countryCode.$localNumber;
+        } else {
+            $data['whatsapp_number'] = null;
         }
 
         $data['whatsapp_opt_in_at'] = $optedIn ? now() : null;
+        unset($data['whatsapp_country_code'], $data['whatsapp_local_number']);
 
         $user = parent::handleRegistration($data);
 
@@ -71,22 +94,28 @@ class Register extends BaseRegister
                         $this->getFirstNameFormComponent(),
                         $this->getLastNameFormComponent(),
                         $this->getEmailFormComponent(),
-                        TextInput::make('whatsapp_number')
-                            ->label('Mobile / WhatsApp number')
+                        Select::make('whatsapp_country_code')
+                            ->label('WhatsApp country code')
+                            ->options(self::COUNTRY_CODES)
+                            ->searchable()
+                            ->default('+39')
+                            ->requiredIf('whatsapp_opt_in', true),
+                        TextInput::make('whatsapp_local_number')
+                            ->label('WhatsApp number')
                             ->tel()
-                            ->placeholder('+39 333 123 4567')
-                            ->helperText('Optional. Use the full international number, including country code. Spaces and dashes are accepted.')
+                            ->placeholder('333 123 4567')
+                            ->helperText('Optional. Enter the number without the country code or leading trunk 0.')
                             ->requiredIf('whatsapp_opt_in', true)
-                            ->rule(fn () => function (string $attribute, mixed $value, \Closure $fail): void {
+                            ->rule(fn (Get $get) => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
                                 if (blank($value)) {
                                     return;
                                 }
 
-                                $raw = trim((string) $value);
-                                $digits = preg_replace('/\D+/', '', $raw) ?? '';
+                                $country = preg_replace('/\D+/', '', (string) $get('whatsapp_country_code')) ?? '';
+                                $local = preg_replace('/\D+/', '', (string) $value) ?? '';
 
-                                if (! str_starts_with($raw, '+') || ! preg_match('/^[1-9]\d{7,14}$/', $digits)) {
-                                    $fail('Enter a valid international number in E.164 format, for example +39 333 123 4567.');
+                                if ($local === '' || str_starts_with($local, '0') || ! preg_match('/^[1-9]\d{5,14}$/', $local) || strlen($country.$local) > 15) {
+                                    $fail('Enter a valid WhatsApp number for the selected country.');
                                 }
                             }),
                         Toggle::make('whatsapp_opt_in')

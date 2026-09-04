@@ -14,6 +14,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Notifications\Notification;
+use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Pages\Auth\Login as BaseLogin;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Validation\ValidationException;
@@ -83,6 +85,7 @@ class Login extends BaseLogin
 
         Filament::auth()->login($user, $data['remember'] ?? false);
         session()->regenerate();
+        $this->notifyMissingWhatsAppNumber($user);
 
         return app(LoginResponse::class);
     }
@@ -118,8 +121,28 @@ class Login extends BaseLogin
         session()->forget(['two_factor_authentication_user_id', 'two_factor_authentication_remember']);
         $this->twoFactorChallenge = false;
         session()->regenerate();
+        $this->notifyMissingWhatsAppNumber($user);
 
         return app(LoginResponse::class);
+    }
+
+    private function notifyMissingWhatsAppNumber(User $user): void
+    {
+        if (filled($user->whatsapp_number)) {
+            return;
+        }
+
+        Notification::make()
+            ->info()
+            ->title('Add your WhatsApp number')
+            ->body('Receive support replies directly in WhatsApp by adding your number to your profile.')
+            ->actions([
+                NotificationAction::make('addWhatsAppNumber')
+                    ->label('Add number')
+                    ->url(EditProfile::getUrl()),
+            ])
+            ->persistent()
+            ->send();
     }
 
     protected function userNeedsTwoFactorChallenge(User $user): bool
