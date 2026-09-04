@@ -200,7 +200,11 @@ class MurUstatImporter implements UniversityDataImporter
 
         $idsByKey = [];
         foreach ($records as $key => $record) {
-            $university = University::firstOrNew(['canonical_name' => $record['canonical_name']]);
+            $university = University::query()
+                ->where('canonical_name', $record['canonical_name'])
+                ->orWhere('name', $record['name'])
+                ->orWhere('slug', $record['slug'])
+                ->first() ?? new University;
             $university->fill($university->exists ? collect($record)->except('slug')->all() : $record);
             $university->save();
             $idsByKey[$key] = $university->id;
@@ -228,7 +232,11 @@ class MurUstatImporter implements UniversityDataImporter
 
         $idsByName = [];
         foreach ($records as $record) {
-            $subject = Subject::firstOrNew(['canonical_name' => $record['canonical_name']]);
+            $subject = Subject::query()
+                ->where('canonical_name', $record['canonical_name'])
+                ->orWhere('name', $record['name'])
+                ->orWhere('slug', $record['slug'])
+                ->first() ?? new Subject;
             $subject->fill($subject->exists ? collect($record)->except('slug')->all() : $record);
             $subject->save();
             $idsByName[$record['name']] = $subject->id;
