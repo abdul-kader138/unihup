@@ -2,6 +2,7 @@
 
 namespace App\Filament\Auth;
 
+use App\Models\User;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -10,6 +11,7 @@ use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Pages\Auth\Register as BaseRegister;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Two changes on top of Filament's stock registration page:
@@ -80,19 +82,22 @@ class Register extends BaseRegister
     }
 
     /**
-     * No-op on purpose. Filament's default sends
-     * Filament\Notifications\Auth\VerifyEmail with a link to the panel's own
-     * verify route, which is behind Authenticate middleware and so 302s to
-     * /login when the email is opened on another device. We instead rely on
-     * the `Registered` event that parent::register() fires: Laravel's
-     * always-registered SendEmailVerificationNotification listener calls
-     * User::sendEmailVerificationNotification(), which sends
-     * App\Notifications\Auth\VerifyEmail (→ `verification.verify`, no auth
-     * required). Overriding this to nothing suppresses the duplicate email.
+     * Use our cross-device verification link and fall back to a direct send
+     * if the Registered listener did not dispatch it on this user instance.
      */
     protected function sendEmailVerificationNotification(Model $user): void
     {
-        // Intentionally empty — see the `Registered` event listener.
+        Log::info('verification.registration', [
+            'user_id' => $user->getKey(),
+            'verified' => $user instanceof User && $user->hasVerifiedEmail(),
+            'already_dispatched' => $user instanceof User && $user->hasDispatchedVerificationNotification(),
+        ]);
+
+        if (! $user instanceof User || $user->hasVerifiedEmail() || $user->hasDispatchedVerificationNotification()) {
+            return;
+        }
+
+        $user->sendEmailVerificationNotification();
     }
 
     /**

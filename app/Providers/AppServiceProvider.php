@@ -7,12 +7,16 @@ use App\Filament\Auth\RegistrationResponse;
 use App\Listeners\LogAuthenticationActivity;
 use App\Listeners\LogPermissionActivity;
 use App\Models\Setting;
+use App\Notifications\Auth\VerifyEmail;
 use App\Policies\ActivityPolicy;
 use App\Services\WhatsApp\WhatsAppClient;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use Filament\Http\Responses\Auth\Contracts\RegistrationResponse as RegistrationResponseContract;
+use Illuminate\Notifications\Events\NotificationSending;
+use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -41,6 +45,20 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->applyMailSettings();
         $this->applyGoogleOAuthSettings();
+
+        // Transport completion is separate from inbox delivery. Never log
+        // recipient addresses, verification URLs, or SMTP credentials.
+        Event::listen([NotificationSending::class, NotificationSent::class], function (NotificationSending|NotificationSent $event): void {
+            if (! $event->notification instanceof VerifyEmail || $event->channel !== 'mail') {
+                return;
+            }
+
+            Log::info($event instanceof NotificationSent ? 'verification.transport_completed' : 'verification.transport_started', [
+                'user_id' => $event->notifiable->getKey(),
+                'notification_id' => $event->notification->id,
+                'mailer' => config('mail.default'),
+            ]);
+        });
 
         // Every password field in the app — registration, forgot-password
         // reset, profile password change, and admin-created users — calls

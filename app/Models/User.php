@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -31,6 +32,9 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
     use HasFactory, HasRoles, LogsActivity, Notifiable;
 
     use \Illuminate\Auth\MustVerifyEmail;
+
+    // Tracks dispatch only on this instance; later resend requests remain available.
+    protected bool $verificationNotificationDispatched = false;
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -91,18 +95,23 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
         return $this->hasRole('super_admin');
     }
 
-    /**
-     * Filament's own auth pages build and send their own
-     * Filament\Notifications\Auth\* notifications directly (see
-     * RequestPasswordReset::request() and EmailVerificationPrompt::
-     * sendEmailVerificationNotification()) rather than calling these
-     * Authenticatable defaults, so these overrides only affect anything that
-     * still triggers the base Illuminate auth flow directly (e.g. tests,
-     * console-created users).
-     */
     public function sendEmailVerificationNotification(): void
     {
+        Log::info('verification.dispatch_requested', [
+            'user_id' => $this->getKey(),
+            'queue_connection' => config('queue.default'),
+        ]);
+
         $this->notify(new VerifyEmail);
+
+        $this->verificationNotificationDispatched = true;
+
+        Log::info('verification.dispatched', ['user_id' => $this->getKey()]);
+    }
+
+    public function hasDispatchedVerificationNotification(): bool
+    {
+        return $this->verificationNotificationDispatched;
     }
 
     public function sendPasswordResetNotification($token): void
