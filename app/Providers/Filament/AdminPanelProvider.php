@@ -91,7 +91,6 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::TOPBAR_START,
                 fn (): View => view('filament.partials.topbar-tagline'),
             )
-            ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('15rem')
             ->navigationGroups([
                 // No group icons — Filament suppresses per-item icons and shows a
