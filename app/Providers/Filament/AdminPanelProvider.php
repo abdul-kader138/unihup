@@ -91,6 +91,14 @@ class AdminPanelProvider extends PanelProvider
                 PanelsRenderHook::TOPBAR_START,
                 fn (): View => view('filament.partials.topbar-tagline'),
             )
+            // Keep this. Without it Filament uses the "static" sidebar layout,
+            // where a persisted `isOpen: false` (Alpine.$persist in
+            // localStorage, set the first time anyone collapses the sidebar)
+            // slides .fi-sidebar off-screen with `-translate-x-full` AND
+            // renders no expand button — the desktop menu then vanishes with
+            // no way back. The custom sidebar CSS (sticky, 100vh, tricolore
+            // bar) is written against this collapsible/lg:sticky mode too.
+            ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('15rem')
             ->navigationGroups([
                 // No group icons — Filament suppresses per-item icons and shows a
@@ -508,13 +516,17 @@ CSS,
         align-items: center;
         gap: .55rem;
         min-width: 0;
-        flex: 1 1 auto;
-        max-width: none;
+        /* Take the empty left stretch of the topbar, but never so much that
+           the right-side controls (notifications, user menu) get squeezed —
+           cap it and let it shrink first. */
+        flex: 0 1 32rem;
+        max-width: min(40vw, 34rem);
         margin-inline-end: .5rem;
         padding-inline-start: .125rem;
         user-select: none;
     }
     @media (min-width: 768px)  { .fi-topbar-tagline { display: flex; } }
+    @media (min-width: 1536px) { .fi-topbar-tagline { flex-basis: 40rem; max-width: 40rem; } }
 
     .fi-topbar-tagline__dot {
         flex: none;

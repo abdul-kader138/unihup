@@ -120,6 +120,7 @@
             left: 0 !important;
             width: 52% !important;
             height: 100vh !important;
+            height: 100dvh !important;
             z-index: 20;
         }
         .fi-simple-main {
@@ -146,6 +147,7 @@
         .fi-simple-main.ring-1 { --tw-ring-shadow: none !important; }
         .fi-simple-page {
             min-height: 100vh;
+            min-height: 100dvh;
             padding-left: 52% !important;
             display: flex;
             flex-direction: column;
@@ -172,15 +174,59 @@
             box-sizing: border-box;
         }
     }
-    /* Mobile: no split panel, just centre the light card on the grey canvas. */
-    @media (max-width: 1023px) {
-        .fi-simple-page > section {
-            background: #ffffff;
-            border: 1px solid rgb(2 6 23 / .1);
-        }
+    /* Narrow desktop split (1024–1200): 52% of a ~1100px viewport minus the
+       panel's 3rem side padding barely fits the 26rem admission card, so its
+       inner rows overflow. Tighten the padding and let the card + field row
+       flex down. */
+    @media (min-width: 1024px) and (max-width: 1200px) {
+        .auth-brand-panel { padding: 2rem 2.25rem !important; }
+        .abp-pass { width: 100%; }
+        .abp-pass-main > div { flex-wrap: wrap; row-gap: .6rem; }
     }
+
+    /* Short viewports (e.g. 1366×768 laptops): the brand panel's stacked
+       content is taller than the screen. Trim its vertical rhythm, and as a
+       fallback let it scroll internally (it's `overflow: hidden` by default
+       to clip the decorative blobs) so the footer/features can't be lost. */
+    @media (min-width: 1024px) and (max-height: 780px) {
+        .auth-brand-panel {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1.5rem !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain;
+        }
+        .fi-simple-page { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+    }
+
+    /* Mobile / tablet: no split panel, just centre the light card on the grey
+       canvas with room to breathe from the screen edges. */
     @media (max-width: 1023px) {
         .auth-brand-panel { display: none !important; }
+        .fi-simple-page {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 2rem 1rem;
+            box-sizing: border-box;
+        }
+        .fi-simple-page > section {
+            width: 100%;
+            max-width: 24rem;
+            margin-inline: auto;
+            background: #ffffff;
+            border: 1px solid rgb(2 6 23 / .1);
+            border-radius: 1rem;
+            box-shadow: 0 12px 32px -16px rgb(2 6 23 / .18);
+            padding: 2rem 1.5rem;
+            box-sizing: border-box;
+        }
+    }
+    @media (max-width: 380px) {
+        .fi-simple-page { padding: 1.25rem .75rem; }
+        .fi-simple-page > section { padding: 1.5rem 1.15rem; }
     }
 
     /* ── Admission card illustration ────────────────────────────────────────── */
