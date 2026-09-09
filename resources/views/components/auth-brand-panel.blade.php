@@ -184,18 +184,17 @@
         .abp-pass-main > div { flex-wrap: wrap; row-gap: .6rem; }
     }
 
-    /* Short viewports (e.g. 1366×768 laptops): the brand panel's stacked
-       content is taller than the screen. Trim its vertical rhythm, and as a
-       fallback let it scroll internally (it's `overflow: hidden` by default
-       to clip the decorative blobs) so the footer/features can't be lost. */
+    /* Short viewports (e.g. 1366×768 laptops): tighten the brand panel's
+       vertical rhythm so its stacked content fits. Do NOT switch it to
+       overflow: auto — the panel keeps `overflow: hidden` to clip the two
+       decorative blur blobs (one sits at bottom: -12rem), and letting it
+       scroll surfaces those as a phantom scrollbar on every laptop screen. */
     @media (min-width: 1024px) and (max-height: 780px) {
         .auth-brand-panel {
             padding-top: 1.5rem !important;
             padding-bottom: 1.5rem !important;
-            overflow-x: hidden !important;
-            overflow-y: auto !important;
-            overscroll-behavior: contain;
         }
+        .auth-brand-panel .abp-pass { transform: scale(.92); transform-origin: left center; }
         .fi-simple-page { padding-top: 1.5rem; padding-bottom: 1.5rem; }
     }
 
