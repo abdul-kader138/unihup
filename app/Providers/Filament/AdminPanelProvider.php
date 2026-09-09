@@ -8,7 +8,7 @@ use App\Filament\Auth\Login;
 use App\Filament\Auth\Register;
 use App\Filament\Auth\ResetPassword;
 use App\Filament\Pages\Dashboard;
-use App\Filament\Pages\FindUniversities;
+use App\Filament\Pages\MyJourney;
 use App\Http\Middleware\RedirectNonAdminsFromDashboard;
 use App\Models\Setting;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
@@ -59,7 +59,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('')
             ->theme(asset('css/filament/admin/theme.css'))
-            ->homeUrl(fn () => FindUniversities::getUrl())
+            ->homeUrl(fn () => Dashboard::canAccess() ? Dashboard::getUrl() : MyJourney::getUrl())
             ->login(Login::class)
             ->registration(Register::class)
             ->passwordReset(RequestPasswordReset::class, ResetPassword::class)
@@ -87,8 +87,10 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('15rem')
             ->navigationGroups([
-                NavigationGroup::make('Guides')
+                NavigationGroup::make('My Journey')
                     ->icon('heroicon-o-map'),
+                NavigationGroup::make('Guides')
+                    ->icon('heroicon-o-book-open'),
                 NavigationGroup::make('Universities')
                     ->icon('heroicon-o-building-library'),
                 NavigationGroup::make('Administration')

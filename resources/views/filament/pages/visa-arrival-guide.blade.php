@@ -1,4 +1,6 @@
 <x-filament-panels::page>
+    @php($states = $this->guideSectionStates())
+
     <div class="space-y-8">
         <div class="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300">
             Getting admitted to a program is only half the process for non-EU applicants — entering and legally
@@ -6,6 +8,8 @@
             (Getting your prior qualification recognized is a related but different process —
             see the <a href="{{ route('filament.admin.pages.doc-recognition') }}" class="text-primary-600 hover:underline dark:text-primary-400">Document Recognition guide</a>.)
         </div>
+
+        <x-guide-progress :progress="$this->guideProgress()" />
 
         @foreach ($this->getPhasedSections() as $phase)
             <div>
@@ -38,6 +42,8 @@
                                             Deadline-critical
                                         </span>
                                     @endif
+                                    @php($sk = 'step-'.$section['step'])
+                                    <x-guide-section-toggle :done="$states[$sk] ?? false" :section-key="$sk" />
                                 </div>
 
                                 @if (! empty($section['who']))

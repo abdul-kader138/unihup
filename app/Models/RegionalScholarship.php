@@ -13,6 +13,9 @@ class RegionalScholarship extends Model
         'region',
         'body_name',
         'description',
+        'amount_min',
+        'amount_max',
+        'isee_threshold',
         'website_url',
         'source_url',
         'last_verified_at',
@@ -22,6 +25,9 @@ class RegionalScholarship extends Model
     {
         return [
             'last_verified_at' => 'datetime',
+            'amount_min' => 'decimal:2',
+            'amount_max' => 'decimal:2',
+            'isee_threshold' => 'decimal:2',
         ];
     }
 }

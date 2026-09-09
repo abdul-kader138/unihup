@@ -243,4 +243,41 @@ class EditProfileTest extends TestCase
         $user->refresh();
         $this->assertFalse($user->hasEnabledTwoFactorAuthentication());
     }
+
+    public function test_saving_the_study_profile_persists_fields_and_stamps_completion(): void
+    {
+        $user = $this->makeStaff();
+        $this->actingAs($user);
+
+        Livewire::test(EditProfile::class)
+            ->fillForm([
+                'nationality' => 'Nigeria',
+                'is_eu_citizen' => false,
+                'english_level' => 'b2',
+                'italian_level' => 'a2',
+                'scholarship_interest' => true,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $user->refresh();
+        $this->assertSame('Nigeria', $user->nationality);
+        $this->assertFalse($user->is_eu_citizen);
+        $this->assertSame('b2', $user->english_level);
+        $this->assertTrue($user->scholarship_interest);
+        $this->assertTrue($user->hasCompletedStudyProfile());
+    }
+
+    public function test_study_profile_is_not_marked_complete_without_a_nationality(): void
+    {
+        $user = $this->makeStaff();
+        $this->actingAs($user);
+
+        Livewire::test(EditProfile::class)
+            ->fillForm(['english_level' => 'c1'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertFalse($user->refresh()->hasCompletedStudyProfile());
+    }
 }

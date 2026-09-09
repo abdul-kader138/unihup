@@ -35,7 +35,8 @@ class MergeDuplicateUniversities extends Command
             $duplicates = $universities->where('id', '!=', $keeper->id);
             $programCount = DegreeProgram::whereIn('university_id', $duplicates->pluck('id'))->count();
             $rankingCount = UniversityRanking::whereIn('university_id', $duplicates->pluck('id'))->count();
-            $blocked = $this->hasProgramConflict($keeper, $duplicates) || $this->hasRankingConflict($keeper, $duplicates);
+            $programConflicts = $this->programConflictCount($keeper, $duplicates);
+            $rankingConflicts = $this->rankingConflictCount($keeper, $duplicates);
 
             $this->line(sprintf(
                 '%s: keep #%d "%s"; merge #%s (%d programs, %d rankings)%s',
@@ -45,18 +46,44 @@ class MergeDuplicateUniversities extends Command
                 $duplicates->pluck('id')->implode(', #'),
                 $programCount,
                 $rankingCount,
-                $blocked ? ' — BLOCKED: relationship conflict' : '',
+                ($programConflicts + $rankingConflicts) > 0
+                    ? sprintf(' — %d program conflict(s), %d ranking conflict(s) will be deduplicated', $programConflicts, $rankingConflicts)
+                    : '',
             ));
 
-            if (! $this->option('apply') || $blocked) {
+            if (! $this->option('apply')) {
                 continue;
             }
 
             DB::transaction(function () use ($duplicates, $keeper) {
-                DegreeProgram::whereIn('university_id', $duplicates->pluck('id'))
-                    ->update(['university_id' => $keeper->id]);
-                UniversityRanking::whereIn('university_id', $duplicates->pluck('id'))
-                    ->update(['university_id' => $keeper->id]);
+                foreach (DegreeProgram::whereIn('university_id', $duplicates->pluck('id'))->get() as $program) {
+                    $existing = DegreeProgram::where('university_id', $keeper->id)
+                        ->where('subject_id', $program->subject_id)
+                        ->where('degree_level', $program->degree_level)
+                        ->where('name', $program->name)
+                        ->first();
+
+                    if ($existing) {
+                        $this->copyMissingProgramFields($existing, $program);
+                        $program->delete();
+                    } else {
+                        $program->update(['university_id' => $keeper->id]);
+                    }
+                }
+
+                foreach (UniversityRanking::whereIn('university_id', $duplicates->pluck('id'))->get() as $ranking) {
+                    $existing = UniversityRanking::where('university_id', $keeper->id)
+                        ->where('edition', $ranking->edition)
+                        ->first();
+
+                    if ($existing) {
+                        $this->copyMissingRankingFields($existing, $ranking);
+                        $ranking->delete();
+                    } else {
+                        $ranking->update(['university_id' => $keeper->id]);
+                    }
+                }
+
                 University::whereIn('id', $duplicates->pluck('id'))->delete();
             });
 
@@ -72,31 +99,63 @@ class MergeDuplicateUniversities extends Command
         return self::SUCCESS;
     }
 
-    private function hasProgramConflict(University $keeper, $duplicates): bool
+    private function programConflictCount(University $keeper, $duplicates): int
     {
+        $count = 0;
+
         foreach (DegreeProgram::whereIn('university_id', $duplicates->pluck('id'))->get() as $program) {
             if (DegreeProgram::where('university_id', $keeper->id)
                 ->where('subject_id', $program->subject_id)
                 ->where('degree_level', $program->degree_level)
                 ->where('name', $program->name)
                 ->exists()) {
-                return true;
+                $count++;
             }
         }
 
-        return false;
+        return $count;
     }
 
-    private function hasRankingConflict(University $keeper, $duplicates): bool
+    private function rankingConflictCount(University $keeper, $duplicates): int
     {
+        $count = 0;
+
         foreach (UniversityRanking::whereIn('university_id', $duplicates->pluck('id'))->get() as $ranking) {
             if (UniversityRanking::where('university_id', $keeper->id)
                 ->where('edition', $ranking->edition)
                 ->exists()) {
-                return true;
+                $count++;
             }
         }
 
-        return false;
+        return $count;
+    }
+
+    private function copyMissingProgramFields(DegreeProgram $keeper, DegreeProgram $duplicate): void
+    {
+        $updates = [];
+        foreach (['language', 'duration_years', 'admission_type', 'admission_notes', 'tuition_note', 'application_window_note', 'official_admission_url', 'source_url', 'last_verified_at'] as $field) {
+            if (blank($keeper->{$field}) && filled($duplicate->{$field})) {
+                $updates[$field] = $duplicate->{$field};
+            }
+        }
+
+        if ($updates) {
+            $keeper->update($updates);
+        }
+    }
+
+    private function copyMissingRankingFields(UniversityRanking $keeper, UniversityRanking $duplicate): void
+    {
+        $updates = [];
+        foreach (['category', 'position', 'score_services', 'score_scholarships', 'score_facilities', 'score_communication_digital', 'score_internationalization', 'score_employability', 'overall_score', 'source_url', 'last_verified_at'] as $field) {
+            if (blank($keeper->{$field}) && filled($duplicate->{$field})) {
+                $updates[$field] = $duplicate->{$field};
+            }
+        }
+
+        if ($updates) {
+            $keeper->update($updates);
+        }
     }
 }

@@ -31,18 +31,22 @@ final class DocumentRecognitionCopy
 
     public const SECTIONS = [
         [
+            'key' => 'dov',
             'heading' => 'Dichiarazione di Valore (DOV)',
             'body' => "Issued by the Italian embassy or consulate in the country where you earned your qualification. It isn't a formal recognition — it's an official document explaining your institution, course duration, admission requirements, and grading, in terms Italian universities can evaluate. Your diploma and transcript must be legalized (or apostilled, if your country is party to the Hague Convention) before you can request it. Apply directly through the embassy or consulate — requirements and processing time vary by country.",
         ],
         [
+            'key' => 'cimea',
             'heading' => "CIMEA's Statement of Comparability & Statement of Verification",
             'body' => "CIMEA is Italy's national ENIC-NARIC center for qualification recognition. Its Statement of Comparability confirms your qualification's level against the Bologna Process / European Qualifications Framework (roughly: bachelor's-equivalent, master's-equivalent, etc.) — a non-binding opinion, not a legal recognition. Its separate Statement of Verification confirms the document itself is authentic, and says nothing about its level. Both are applied for online via CIMEA's Diplome platform, with no need to visit an embassy — standard processing is 15-30 working days, express is 5-10, once your documents and payment are submitted. Your diploma still needs to be legalized or apostilled first.",
         ],
         [
+            'key' => 'which-one',
             'heading' => 'Which one do I need?',
             'body' => "That's decided entirely by the specific university and program's own admission notice (bando), not a single national rule. Many universities now accept a CIMEA statement instead of, or alongside, a DOV — especially for master's and PhD applicants — but this isn't universal. Always confirm on the official admission page for the specific program before requesting either one; picking the wrong one costs real weeks and money to redo.",
         ],
         [
+            'key' => 'before-you-start',
             'heading' => 'Before you start',
             'body' => "Get your diploma and transcript legalized or apostilled in your home country first — neither DOV nor a CIMEA statement can be requested without it. Have certified translations ready if the university or consulate asks for them. Start early: both processes commonly take several weeks, and application deadlines don't move for you.",
         ],

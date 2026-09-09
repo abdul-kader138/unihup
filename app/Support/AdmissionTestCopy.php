@@ -35,10 +35,12 @@ final class AdmissionTestCopy
 
     public const SECTIONS = [
         [
+            'key' => 'which-test',
             'heading' => 'Which test do I need?',
             'body' => "It depends entirely on the subject area, not the university — almost every Italian public university uses the same CISIA TOLC system for a given field, so the test is tied to what you're applying to study. The three tracks below cover nearly every restricted-entry program: TOLC for most fields, IMAT for English-taught medical programs, and the newer \"filter semester\" for Italian-taught Medicine, Dentistry and Veterinary Medicine. Always confirm on the specific program's own admission notice (bando) — a handful of programs, and most private/non-state universities, run their own separate entrance test outside this system.",
         ],
         [
+            'key' => 'tolc',
             'heading' => 'TOLC (Test OnLine CISIA) — most restricted-entry programs',
             'body' => "TOLC is a standardized, computer-based admission test run by CISIA, a consortium most Italian public universities belong to. There isn't one TOLC — there are several versions, each built for a subject area: TOLC-I (engineering), TOLC-E (economics/social sciences), TOLC-F (pharmacy), TOLC-B (biology/life sciences), TOLC-S (general sciences), TOLC-AV (agriculture/veterinary), TOLC-SU (humanities), TOLC-PSI (psychology), TOLC-SPS (political/social sciences), and TOLC-LP (applied/professional-track degrees). Each is multiple-choice, delivered either on a university campus (TOLC@UNI) or remotely from home (TOLC@HOME), and costs a flat €35 registration fee. You get your result immediately for an on-campus sitting, or within about 48 hours for a remote one.",
             'checklist' => [
@@ -51,6 +53,7 @@ final class AdmissionTestCopy
             'critical' => false,
         ],
         [
+            'key' => 'imat',
             'heading' => 'IMAT — English-taught Medicine, Dentistry & Veterinary Medicine',
             'body' => 'IMAT (International Medical Admissions Test) is the entrance exam for English-language Medicine and Surgery, Dentistry, and Veterinary Medicine programs — the tracks built specifically for international students. It is administered once a year, on the same date at every participating Italian university and at several test centres abroad, and organized centrally through the Ministry via the Universitaly portal rather than by individual universities. The test is 100 minutes, 60 multiple-choice questions covering logical reasoning, general knowledge, biology, chemistry, physics and mathematics, with 1.5 points for each correct answer and a 0.4-point penalty for each incorrect one (unanswered questions score zero) — a maximum of 90 points.',
             'checklist' => [
@@ -62,6 +65,7 @@ final class AdmissionTestCopy
             'critical' => true,
         ],
         [
+            'key' => 'semestre-filtro',
             'heading' => 'Italian-taught Medicine, Dentistry & Veterinary Medicine — the "semestre filtro"',
             'body' => "From the 2024/25 intake, Italy replaced the old single entrance exam for Italian-taught Medicine, Dentistry and Veterinary Medicine with an open-access \"filter semester\" (semestre filtro). You can enrol in the first semester without any entrance test, but you must simultaneously enrol in a related biomedical, health, pharmaceutical, or veterinary degree at the same time (at no extra cost) as a fallback. During the semester, standardized national exams in biology, chemistry and physics are set and graded with the same criteria everywhere, with two attempts per subject. Your combined performance places you in a national merit ranking, which — together with the list of universities you rank by preference (a minimum of five) and each university's seat count — determines whether and where you continue into the second semester.",
             'checklist' => [

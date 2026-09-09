@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\Dashboard;
-use App\Filament\Pages\FindUniversities;
+use App\Filament\Pages\MyJourney;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -40,13 +40,13 @@ class CustomerDashboardAccessTest extends TestCase
         $this->assertTrue(Dashboard::canAccess());
     }
 
-    public function test_a_student_hitting_the_panel_root_is_redirected_to_university_search(): void
+    public function test_a_student_hitting_the_panel_root_is_redirected_to_my_journey(): void
     {
         $user = User::factory()->create();
         $user->assignRole('panel_user');
 
         $this->actingAs($user)
             ->get('/')
-            ->assertRedirect(FindUniversities::getUrl());
+            ->assertRedirect(MyJourney::getUrl());
     }
 }

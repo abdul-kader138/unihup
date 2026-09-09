@@ -4,6 +4,11 @@
         $bridged = $user->whatsapp_opt_in && $user->whatsapp_number;
     @endphp
 
+    <div class="mb-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-400">
+        Quick questions are often already answered in the
+        <a href="{{ route('filament.admin.pages.help-center') }}" class="font-medium text-primary-600 hover:underline dark:text-primary-400">Help Center</a> — worth a look before you wait for a reply.
+    </div>
+
     {{-- Same card shell, header/thread/composer structure and spacing as
          App\Filament\Pages\WhatsAppInbox — this is the same conversation
          from the other side, so it should read as the same product. --}}

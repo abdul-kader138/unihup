@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Pages\Concerns\TracksGuideProgress;
 use App\Support\DocumentRecognitionCopy;
 use Filament\Pages\Page;
 
@@ -16,6 +17,19 @@ use Filament\Pages\Page;
  */
 class DocumentRecognitionGuide extends Page
 {
+    use TracksGuideProgress;
+
+    public function guideKey(): string
+    {
+        return 'doc-recognition';
+    }
+
+    /** @return array<int, string> */
+    public function sectionKeys(): array
+    {
+        return array_column(DocumentRecognitionCopy::SECTIONS, 'key');
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-document-check';
 
     protected static ?string $navigationLabel = 'Doc Recognition';

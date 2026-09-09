@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\DeadlineIcsController;
+use App\Http\Controllers\StudentDocumentController;
 use App\Http\Controllers\WhatsAppMediaController;
 use App\Http\Controllers\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
@@ -39,3 +41,14 @@ Route::match(['get', 'post'], '/webhooks/whatsapp', WhatsAppWebhookController::c
 Route::get('/whatsapp/media/{message}', WhatsAppMediaController::class)
     ->middleware('auth')
     ->name('whatsapp.media');
+
+// A student downloading a file from their own document vault. Off the public
+// disk; the controller checks ownership (see StudentDocumentController).
+Route::get('/student-documents/{document}/download', StudentDocumentController::class)
+    ->middleware('auth')
+    ->name('student-documents.download');
+
+// The signed-in student's relevant deadlines as an importable .ics calendar.
+Route::get('/my-deadlines.ics', DeadlineIcsController::class)
+    ->middleware('auth')
+    ->name('deadlines.ics');

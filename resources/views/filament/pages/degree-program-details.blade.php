@@ -11,6 +11,7 @@
     $languageNote = \App\Support\LanguageProficiencyCopy::forLanguage($program->language);
     $ranking = $university->latestRanking();
     $costOfLiving = \App\Support\CostOfLivingCopy::forCity($university->city);
+    $cityGuide = \App\Models\CityGuide::forCity($university->city);
 @endphp
 
 <div class="space-y-4 text-sm">
@@ -97,6 +98,11 @@
                     {{ $label }} &rarr;
                 </a>
             @endforeach
+            @if ($cityGuide)
+                <a href="{{ \App\Filament\Pages\CityGuides::getUrl(['city' => $university->city]) }}" class="text-xs font-medium text-primary-600 hover:underline dark:text-primary-400">
+                    UniHup city guide: {{ $cityGuide->city }} &rarr;
+                </a>
+            @endif
         </div>
     </div>
 

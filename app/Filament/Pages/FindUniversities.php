@@ -6,6 +6,7 @@ use App\Models\DegreeProgram;
 use App\Models\Subject;
 use App\Models\University;
 use App\Models\UniversityRanking;
+use App\Support\EligibilityEngine;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -175,6 +176,15 @@ class FindUniversities extends Page implements HasTable
                     TextColumn::make('language')
                         ->badge()
                         ->color('gray'),
+
+                    TextColumn::make('eligibility')
+                        ->label('')
+                        ->badge()
+                        ->icon('heroicon-o-sparkles')
+                        ->getStateUsing(fn (DegreeProgram $record) => EligibilityEngine::LABELS[$this->eligibilityFor($record)['verdict']])
+                        ->color(fn (DegreeProgram $record) => EligibilityEngine::COLORS[$this->eligibilityFor($record)['verdict']])
+                        ->tooltip(fn (DegreeProgram $record) => implode(' ', $this->eligibilityFor($record)['reasons']))
+                        ->visible(fn () => auth()->user()->hasCompletedStudyProfile()),
                 ])->space(2),
             ])
             ->recordAction('view')
@@ -187,11 +197,71 @@ class FindUniversities extends Page implements HasTable
                     ->modalContent(fn (DegreeProgram $record) => view('filament.pages.degree-program-details', ['program' => $record]))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
+
+                TableAction::make('shortlist')
+                    ->label(fn (DegreeProgram $record) => $this->isShortlisted($record) ? 'On my list' : 'Save to my list')
+                    ->icon(fn (DegreeProgram $record) => $this->isShortlisted($record) ? 'heroicon-s-bookmark' : 'heroicon-o-bookmark')
+                    ->color(fn (DegreeProgram $record) => $this->isShortlisted($record) ? 'primary' : 'gray')
+                    ->link()
+                    ->action(fn (DegreeProgram $record) => $this->toggleShortlist($record)),
             ])
             ->defaultSort('university.name')
             ->emptyStateHeading('No matching programs yet')
             ->emptyStateDescription('Try clearing a filter above, or ask an admin to add more universities.')
             ->emptyStateIcon('heroicon-o-building-library');
+    }
+
+    /** @var array<int, true>|null program ids on the current user's list */
+    protected ?array $shortlistedIds = null;
+
+    /** @var array<int, array{verdict: string, reasons: array<int, string>}> per-request memo */
+    protected array $eligibilityCache = [];
+
+    /**
+     * @return array{verdict: string, reasons: array<int, string>}
+     */
+    protected function eligibilityFor(DegreeProgram $program): array
+    {
+        return $this->eligibilityCache[$program->id] ??= EligibilityEngine::assess($program, auth()->user());
+    }
+
+    protected function isShortlisted(DegreeProgram $program): bool
+    {
+        if ($this->shortlistedIds === null) {
+            $this->shortlistedIds = auth()->user()->shortlistItems()
+                ->pluck('degree_program_id')
+                ->flip()
+                ->all();
+        }
+
+        return isset($this->shortlistedIds[$program->id]);
+    }
+
+    public function toggleShortlist(DegreeProgram $program): void
+    {
+        $existing = auth()->user()->shortlistItems()
+            ->where('degree_program_id', $program->id)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+            unset($this->shortlistedIds[$program->id]);
+            Notification::make()->title('Removed from your list')->send();
+
+            return;
+        }
+
+        auth()->user()->shortlistItems()->create([
+            'degree_program_id' => $program->id,
+            'status' => 'researching',
+        ]);
+        $this->shortlistedIds[$program->id] = true;
+
+        Notification::make()
+            ->success()
+            ->title('Saved to your list')
+            ->body('Track it in My Applications.')
+            ->send();
     }
 
     protected function getHeaderActions(): array

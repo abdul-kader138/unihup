@@ -31,3 +31,12 @@ Schedule::job(new EnrichUniversitiesJob(array_keys(EnricherRegistry::ENRICHERS))
     ->cron('15 */3 * * *')
     ->name('universities-enrich')
     ->withoutOverlapping();
+
+// Daily 14/3/1-day deadline reminders for each student's shortlist. Runs
+// once a day at 07:00; the command is idempotent (deadline_reminder_log) so
+// a double-run never double-sends. Mail + optional WhatsApp go through the
+// queue worker, so this returns fast.
+Schedule::command('unihup:send-deadline-reminders')
+    ->dailyAt('07:00')
+    ->name('deadline-reminders')
+    ->withoutOverlapping();

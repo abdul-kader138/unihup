@@ -88,6 +88,6 @@ class RegistrationVerificationTest extends TestCase
             ])
             ->call('register')
             ->assertHasNoFormErrors()
-            ->assertRedirect('/find-universities');
+            ->assertRedirect('/my-journey');
     }
 }

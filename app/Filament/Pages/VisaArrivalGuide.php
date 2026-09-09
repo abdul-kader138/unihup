@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Pages\Concerns\TracksGuideProgress;
 use App\Support\VisaArrivalCopy;
 use Filament\Pages\Page;
 
@@ -19,6 +20,8 @@ use Filament\Pages\Page;
  */
 class VisaArrivalGuide extends Page
 {
+    use TracksGuideProgress;
+
     protected static ?string $navigationIcon = 'heroicon-o-identification';
 
     protected static ?string $navigationLabel = 'Visa & Arrival';
@@ -36,6 +39,17 @@ class VisaArrivalGuide extends Page
     public function getSections(): array
     {
         return VisaArrivalCopy::SECTIONS;
+    }
+
+    public function guideKey(): string
+    {
+        return 'visa-arrival';
+    }
+
+    /** @return array<int, string> */
+    public function sectionKeys(): array
+    {
+        return array_map(fn (array $s) => 'step-'.$s['step'], VisaArrivalCopy::SECTIONS);
     }
 
     /**

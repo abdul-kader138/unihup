@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Filament\Auth\Register;
+use App\Filament\Pages\FindUniversities;
+use App\Filament\Resources\DegreeProgramResource\Pages\CreateDegreeProgram;
 use App\Filament\Resources\UniversityResource\Pages\ListUniversities;
 use App\Models\DegreeProgram;
 use App\Models\Subject;
@@ -10,6 +12,7 @@ use App\Models\University;
 use App\Models\User;
 use Database\Seeders\ShieldSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class FindUniversitiesTest extends TestCase
@@ -22,9 +25,9 @@ class FindUniversitiesTest extends TestCase
         $this->seed(ShieldSeeder::class);
     }
 
-    public function test_a_new_registration_lands_on_find_universities(): void
+    public function test_a_new_registration_lands_on_my_journey(): void
     {
-        \Livewire\Livewire::test(Register::class)
+        Livewire::test(Register::class)
             ->fillForm([
                 'first_name' => 'Ada',
                 'last_name' => 'Lovelace',
@@ -34,7 +37,7 @@ class FindUniversitiesTest extends TestCase
             ])
             ->call('register')
             ->assertHasNoFormErrors()
-            ->assertRedirect('/find-universities');
+            ->assertRedirect('/my-journey');
 
         $user = User::where('email', 'ada@example.com')->firstOrFail();
         $this->assertTrue($user->hasRole('panel_user'));
@@ -42,7 +45,7 @@ class FindUniversitiesTest extends TestCase
 
     public function test_registration_requires_acknowledgement_when_a_whatsapp_number_is_entered(): void
     {
-        \Livewire\Livewire::test(Register::class)
+        Livewire::test(Register::class)
             ->fillForm([
                 'first_name' => 'Ada',
                 'last_name' => 'Lovelace',
@@ -59,7 +62,7 @@ class FindUniversitiesTest extends TestCase
 
     public function test_registration_rejects_an_invalid_whatsapp_number(): void
     {
-        \Livewire\Livewire::test(Register::class)
+        Livewire::test(Register::class)
             ->fillForm([
                 'first_name' => 'Ada',
                 'last_name' => 'Lovelace',
@@ -116,8 +119,8 @@ class FindUniversitiesTest extends TestCase
         $user = User::factory()->create(['preferred_subject_id' => $subject->id, 'preferred_degree_level' => 'bachelor']);
         $user->assignRole('panel_user');
 
-        \Livewire\Livewire::actingAs($user)
-            ->test(\App\Filament\Pages\FindUniversities::class)
+        Livewire::actingAs($user)
+            ->test(FindUniversities::class)
             ->assertCanSeeTableRecords([$match])
             ->assertCanNotSeeTableRecords([$nonMatch]);
     }
@@ -131,7 +134,7 @@ class FindUniversitiesTest extends TestCase
 
         $this->actingAs($admin);
 
-        \Livewire\Livewire::test(\App\Filament\Resources\DegreeProgramResource\Pages\CreateDegreeProgram::class)
+        Livewire::test(CreateDegreeProgram::class)
             ->fillForm([
                 'university_id' => $university->id,
                 'subject_id' => $subject->id,
@@ -153,6 +156,6 @@ class FindUniversitiesTest extends TestCase
         $admin->assignRole('super_admin');
         $this->actingAs($admin);
 
-        \Livewire\Livewire::test(ListUniversities::class)->assertOk();
+        Livewire::test(ListUniversities::class)->assertOk();
     }
 }

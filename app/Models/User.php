@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -24,7 +26,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['first_name', 'last_name', 'email', 'phone', 'marketing_opt_in', 'whatsapp_number', 'whatsapp_opt_in', 'whatsapp_opt_in_at', 'password', 'avatar', 'google_id', 'email_verified_at', 'preferred_subject_id', 'preferred_degree_level'])]
+#[Fillable(['first_name', 'last_name', 'email', 'phone', 'marketing_opt_in', 'whatsapp_number', 'whatsapp_opt_in', 'whatsapp_opt_in_at', 'password', 'avatar', 'google_id', 'email_verified_at', 'preferred_subject_id', 'preferred_degree_level', 'nationality', 'is_eu_citizen', 'prior_education_country', 'english_level', 'italian_level', 'scholarship_interest', 'study_profile_completed_at', 'deadline_reminders_opt_out'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, MustVerifyEmail
 {
@@ -58,6 +60,10 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
             'marketing_opt_in' => 'boolean',
             'whatsapp_opt_in' => 'boolean',
             'whatsapp_opt_in_at' => 'datetime',
+            'is_eu_citizen' => 'boolean',
+            'scholarship_interest' => 'boolean',
+            'study_profile_completed_at' => 'datetime',
+            'deadline_reminders_opt_out' => 'boolean',
             // Encrypted at rest — plain Eloquent casts, no extra package needed.
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
@@ -127,6 +133,33 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
     public function whatsappConversation(): HasOne
     {
         return $this->hasOne(WhatsAppConversation::class);
+    }
+
+    public function shortlistItems(): HasMany
+    {
+        return $this->hasMany(ShortlistItem::class);
+    }
+
+    public function shortlistedPrograms(): BelongsToMany
+    {
+        return $this->belongsToMany(DegreeProgram::class, 'shortlist_items')
+            ->withPivot('status', 'notes')
+            ->withTimestamps();
+    }
+
+    public function studentDocuments(): HasMany
+    {
+        return $this->hasMany(StudentDocument::class);
+    }
+
+    public function journeyProgress(): HasMany
+    {
+        return $this->hasMany(JourneyProgress::class);
+    }
+
+    public function hasCompletedStudyProfile(): bool
+    {
+        return $this->study_profile_completed_at !== null;
     }
 
     public function getFilamentAvatarUrl(): ?string

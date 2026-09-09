@@ -1,4 +1,7 @@
 <x-filament-panels::page>
+    @php($states = $this->guideSectionStates())
+    @php($progress = $this->guideProgress())
+
     <div class="space-y-6">
         <div class="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300">
             Programs flagged <span class="font-medium">Restricted</span> admission generally require passing a standardized
@@ -8,8 +11,15 @@
             <a href="{{ route('filament.admin.pages.visa-arrival') }}" class="text-primary-600 hover:underline dark:text-primary-400">Visa &amp; Arrival guide</a>.)
         </div>
 
+        <x-guide-progress :progress="$progress" />
+
         @foreach ($this->getSections() as $section)
-            <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
+            @php($sk = $section['key'])
+            <div @class([
+                'rounded-xl border p-4',
+                'border-gray-200 bg-white dark:border-white/10 dark:bg-white/5' => ! ($states[$sk] ?? false),
+                'border-success-200 bg-success-50/40 dark:border-success-400/20 dark:bg-success-400/5' => $states[$sk] ?? false,
+            ])>
                 <div class="flex flex-wrap items-center gap-2">
                     <h2 class="text-base font-semibold">{{ $section['heading'] }}</h2>
                     @if (! empty($section['critical']))
@@ -18,6 +28,7 @@
                             Deadline-critical
                         </span>
                     @endif
+                    <x-guide-section-toggle :done="$states[$sk] ?? false" :section-key="$sk" />
                 </div>
 
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ $section['body'] }}</p>

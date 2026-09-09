@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Pages\Concerns\TracksGuideProgress;
 use App\Support\AdmissionTestCopy;
 use Filament\Pages\Page;
 
@@ -17,6 +18,19 @@ use Filament\Pages\Page;
  */
 class AdmissionTestGuide extends Page
 {
+    use TracksGuideProgress;
+
+    public function guideKey(): string
+    {
+        return 'admission-tests';
+    }
+
+    /** @return array<int, string> */
+    public function sectionKeys(): array
+    {
+        return array_column(AdmissionTestCopy::SECTIONS, 'key');
+    }
+
     protected static ?string $navigationIcon = 'heroicon-o-pencil-square';
 
     protected static ?string $navigationLabel = 'Admission Tests';

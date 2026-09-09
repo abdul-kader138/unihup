@@ -5,6 +5,7 @@ namespace App\Filament\Auth;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\TwoFactorAuthenticationService;
+use App\Support\ProficiencyLevels;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Components\FileUpload;
@@ -12,8 +13,8 @@ use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -112,6 +113,37 @@ class EditProfile extends BaseEditProfile
                                     ->live(),
                             ]),
 
+                        Section::make('Study profile')
+                            ->description('Powers your personalised journey checklist and the "can I apply?" hints. None of this is shared with universities.')
+                            ->schema([
+                                Grid::make(2)->schema([
+                                    TextInput::make('nationality')
+                                        ->label('Nationality')
+                                        ->maxLength(100),
+                                    TextInput::make('prior_education_country')
+                                        ->label('Country of your last qualification')
+                                        ->maxLength(100),
+                                ]),
+                                Toggle::make('is_eu_citizen')
+                                    ->label('I hold EU / EEA / Swiss citizenship')
+                                    ->helperText('If this is off, your checklist includes the pre-enrolment, visa and residence-permit steps.'),
+                                Grid::make(2)->schema([
+                                    Select::make('english_level')
+                                        ->label('English level')
+                                        ->options(ProficiencyLevels::options())
+                                        ->native(false),
+                                    Select::make('italian_level')
+                                        ->label('Italian level')
+                                        ->options(ProficiencyLevels::options())
+                                        ->native(false),
+                                ]),
+                                Toggle::make('scholarship_interest')
+                                    ->label('I want to apply for scholarships / right-to-study (DSU) benefits'),
+                                Toggle::make('deadline_reminders_opt_out')
+                                    ->label('Mute deadline reminder emails')
+                                    ->helperText('We email you 14, 3 and 1 days before deadlines on your saved programs. Turn this on to stop them.'),
+                            ]),
+
                         Section::make('Two-Factor Authentication')
                             ->schema([
                                 Placeholder::make('two_factor_status')
@@ -146,6 +178,13 @@ class EditProfile extends BaseEditProfile
             : null;
 
         unset($data['whatsapp_country_code'], $data['whatsapp_local_number']);
+
+        // Stamp the study profile as complete once nationality is provided —
+        // that's the minimum the journey checklist / eligibility engine need
+        // to personalise. Keeps the first-completion timestamp stable.
+        $data['study_profile_completed_at'] = filled($data['nationality'] ?? null)
+            ? ($this->getUser()->study_profile_completed_at ?? now())
+            : null;
 
         return $data;
     }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Filament\Pages\FindUniversities;
+use App\Filament\Pages\MyJourney;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Filament\Facades\Filament;
@@ -66,7 +66,7 @@ class GoogleAuthController extends Controller
         Filament::auth()->login($user);
         session()->regenerate();
 
-        return redirect()->intended(FindUniversities::getUrl());
+        return redirect()->intended(MyJourney::getUrl());
     }
 
     private function failed(string $message): RedirectResponse

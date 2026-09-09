@@ -4,8 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\DegreeProgramResource\Pages;
 use App\Models\DegreeProgram;
-use App\Models\Subject;
-use App\Models\University;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
@@ -102,8 +100,21 @@ class DegreeProgramResource extends Resource
                         ->columnSpanFull(),
 
                     Textarea::make('tuition_note')
+                        ->label('Tuition note (free text caveat)')
                         ->rows(2)
                         ->columnSpanFull(),
+
+                    Grid::make(2)->schema([
+                        TextInput::make('tuition_min')
+                            ->label('Tuition — annual minimum (€)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->helperText('Used by the student cost estimator. Leave blank if it only scales by ISEE.'),
+                        TextInput::make('tuition_max')
+                            ->label('Tuition — annual maximum (€)')
+                            ->numeric()
+                            ->minValue(0),
+                    ]),
 
                     Textarea::make('application_window_note')
                         ->label('Application window')

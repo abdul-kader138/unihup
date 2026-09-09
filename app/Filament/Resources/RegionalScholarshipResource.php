@@ -55,6 +55,23 @@ class RegionalScholarshipResource extends Resource
                         ->rows(4)
                         ->columnSpanFull(),
 
+                    Grid::make(3)->schema([
+                        TextInput::make('amount_min')
+                            ->label('Award — annual minimum (€)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->helperText('Feeds the student cost estimator.'),
+                        TextInput::make('amount_max')
+                            ->label('Award — annual maximum (€)')
+                            ->numeric()
+                            ->minValue(0),
+                        TextInput::make('isee_threshold')
+                            ->label('ISEE eligibility ceiling (€)')
+                            ->numeric()
+                            ->minValue(0)
+                            ->helperText('Household ISEE at or below which a student qualifies. Blank = no cap modelled.'),
+                    ]),
+
                     Grid::make(2)->schema([
                         TextInput::make('website_url')->url()->maxLength(255),
                         TextInput::make('source_url')->url()->maxLength(255),

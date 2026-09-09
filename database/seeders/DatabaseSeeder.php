@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
             DegreeProgramSeeder::class, */
             RegionalScholarshipSeeder::class,
             UniversityRankingSeeder::class,
+            DeadlineSeeder::class,
+            CityGuideSeeder::class,
+            FaqSeeder::class,
         ]);
     }
 }

@@ -368,7 +368,9 @@ class MurUstatImporter implements UniversityDataImporter
                 $delimiter = substr_count($line, ';') >= substr_count($line, ',') ? ';' : ',';
             }
 
-            yield str_getcsv($line, $delimiter);
+            // Pass $enclosure/$escape explicitly — PHP 8.4 deprecates relying
+            // on the default $escape. Keeps the pre-8.4 behaviour unchanged.
+            yield str_getcsv($line, $delimiter, '"', '\\');
         }
     }
 

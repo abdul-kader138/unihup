@@ -20,6 +20,8 @@ class DegreeProgram extends Model
         'admission_type',
         'admission_notes',
         'tuition_note',
+        'tuition_min',
+        'tuition_max',
         'application_window_note',
         'official_admission_url',
         'source_url',
@@ -31,6 +33,8 @@ class DegreeProgram extends Model
         return [
             'last_verified_at' => 'datetime',
             'duration_years' => 'integer',
+            'tuition_min' => 'decimal:2',
+            'tuition_max' => 'decimal:2',
         ];
     }
 

@@ -96,6 +96,9 @@ class SystemSettings extends Page implements HasForms
             'mail_active_vendor' => Setting::get('mail_active_vendor', 'smtp'),
             'mail_vendors' => $this->getMailVendors(),
             'staff_notification_email' => Setting::get('staff_notification_email', ''),
+            'deadline_reminders_enabled' => (bool) Setting::get('deadline_reminders_enabled', true),
+            'deadline_reminder_whatsapp_template' => Setting::get('deadline_reminder_whatsapp_template', 'deadline_reminder'),
+            'deadline_reminder_whatsapp_language' => Setting::get('deadline_reminder_whatsapp_language', 'en'),
         ]);
     }
 
@@ -377,6 +380,24 @@ class SystemSettings extends Page implements HasForms
                                         ->reorderable(false)
                                         ->required(),
                                 ]),
+
+                            Section::make('Deadline reminders')
+                                ->description('Emails students the deadlines on their shortlist 14, 3 and 1 days out. Runs daily at 07:00.')
+                                ->schema([
+                                    Toggle::make('deadline_reminders_enabled')
+                                        ->label('Send deadline reminders')
+                                        ->default(true),
+                                    Grid::make(2)->schema([
+                                        TextInput::make('deadline_reminder_whatsapp_template')
+                                            ->label('WhatsApp template name')
+                                            ->helperText('An approved WhatsApp template used for the WhatsApp copy of the reminder. Only used when WhatsApp is configured and the student opted in.')
+                                            ->maxLength(255),
+                                        TextInput::make('deadline_reminder_whatsapp_language')
+                                            ->label('Template language code')
+                                            ->placeholder('en')
+                                            ->maxLength(10),
+                                    ]),
+                                ]),
                         ]),
 
                 ])->persistTabInQueryString('tab'),
@@ -403,6 +424,9 @@ class SystemSettings extends Page implements HasForms
             'mail_active_vendor' => 'email',
             'mail_vendors' => 'email',
             'staff_notification_email' => 'email',
+            'deadline_reminders_enabled' => 'email',
+            'deadline_reminder_whatsapp_template' => 'email',
+            'deadline_reminder_whatsapp_language' => 'email',
         ];
 
         foreach ($data as $key => $value) {
