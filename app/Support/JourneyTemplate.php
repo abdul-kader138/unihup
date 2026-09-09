@@ -130,7 +130,7 @@ final class JourneyTemplate
             'title' => 'Apply for regional / DSU scholarships',
             'body' => 'Right-to-study (diritto allo studio) benefits are run per region and have their own early deadlines — usually independent of your admission result.',
             'icon' => 'heroicon-o-banknotes',
-            'help_route' => null,
+            'help_route' => 'filament.admin.pages.my-scholarships',
             'applies_when' => ['wants_scholarship'],
         ],
         [

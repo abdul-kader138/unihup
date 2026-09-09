@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Deadline;
+use App\Models\ScholarshipTracker;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
@@ -32,6 +33,7 @@ class MyDeadlines extends Page
      * @return array{
      *     overdue: Collection<int, Deadline>,
      *     upcoming: Collection<int, Deadline>,
+     *     scholarships: Collection<int, ScholarshipTracker>,
      *     has_shortlist: bool,
      * }
      */
@@ -42,6 +44,11 @@ class MyDeadlines extends Page
         return [
             'overdue' => $all->filter(fn (Deadline $d) => $d->isPast())->values(),
             'upcoming' => $all->reject(fn (Deadline $d) => $d->isPast())->values(),
+            'scholarships' => ScholarshipTracker::query()
+                ->where('user_id', auth()->id())
+                ->whereNotNull('deadline_at')
+                ->orderBy('deadline_at')
+                ->get(),
             'has_shortlist' => auth()->user()->shortlistItems()->exists(),
         ];
     }

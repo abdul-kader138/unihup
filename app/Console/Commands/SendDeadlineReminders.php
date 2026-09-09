@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SendWebPushNotification;
 use App\Jobs\SendWhatsAppMessageJob;
 use App\Mail\DeadlineReminderMail;
 use App\Models\Deadline;
@@ -39,6 +40,7 @@ class SendDeadlineReminders extends Command
         $waConfigured = $whatsapp->configured();
         $mails = 0;
         $waMessages = 0;
+        $pushes = 0;
 
         $users = User::query()
             ->where('deadline_reminders_opt_out', false)
@@ -68,11 +70,15 @@ class SendDeadlineReminders extends Command
                 if ($waConfigured && $user->whatsapp_number && $user->whatsapp_opt_in) {
                     $waMessages += $this->sendWhatsApp($user, $due, $offset, $dryRun) ? 1 : 0;
                 }
+
+                if ($user->pushSubscriptions()->exists()) {
+                    $pushes += $this->sendWebPush($user, $due, $offset, $dryRun) ? 1 : 0;
+                }
             }
         }
 
         $prefix = $dryRun ? '[dry run] ' : '';
-        $this->info("{$prefix}Sent {$mails} reminder email(s) and {$waMessages} WhatsApp message(s).");
+        $this->info("{$prefix}Sent {$mails} reminder email(s), {$waMessages} WhatsApp message(s) and {$pushes} push notification(s).");
 
         return self::SUCCESS;
     }
@@ -143,6 +149,41 @@ class SendDeadlineReminders extends Command
 
             return false;
         }
+    }
+
+    /**
+     * @param  Collection<int, Deadline>  $due
+     */
+    private function sendWebPush(User $user, Collection $due, int $offset, bool $dryRun): bool
+    {
+        $unsent = $this->unlogged($user, $due, $offset, DeadlineReminderLog::CHANNEL_WEBPUSH);
+
+        if ($unsent->isEmpty()) {
+            return false;
+        }
+
+        if ($dryRun) {
+            $this->line("  push → user {$user->id}: {$unsent->count()} deadline(s) (T-{$offset})");
+
+            return true;
+        }
+
+        $first = $unsent->first();
+        $title = $offset === 1 ? 'Deadline tomorrow' : "Deadline in {$offset} days";
+        $body = $unsent->count() === 1
+            ? $first->title
+            : "{$first->title} + ".($unsent->count() - 1).' more';
+
+        SendWebPushNotification::dispatch($user, [
+            'title' => $title,
+            'body' => $body,
+            'url' => route('filament.admin.pages.my-deadlines'),
+            'tag' => "deadline-{$offset}",
+        ]);
+
+        $this->log($user, $unsent, $offset, DeadlineReminderLog::CHANNEL_WEBPUSH);
+
+        return true;
     }
 
     /**

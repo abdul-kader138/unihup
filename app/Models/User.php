@@ -26,7 +26,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['first_name', 'last_name', 'email', 'phone', 'marketing_opt_in', 'whatsapp_number', 'whatsapp_opt_in', 'whatsapp_opt_in_at', 'password', 'avatar', 'google_id', 'email_verified_at', 'preferred_subject_id', 'preferred_degree_level', 'nationality', 'is_eu_citizen', 'prior_education_country', 'english_level', 'italian_level', 'scholarship_interest', 'study_profile_completed_at', 'deadline_reminders_opt_out'])]
+#[Fillable(['first_name', 'last_name', 'email', 'phone', 'marketing_opt_in', 'whatsapp_number', 'whatsapp_opt_in', 'whatsapp_opt_in_at', 'password', 'avatar', 'google_id', 'email_verified_at', 'preferred_subject_id', 'preferred_degree_level', 'nationality', 'is_eu_citizen', 'prior_education_country', 'english_level', 'italian_level', 'scholarship_interest', 'home_currency', 'study_profile_completed_at', 'deadline_reminders_opt_out', 'weekly_digest_sent_at'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, MustVerifyEmail
 {
@@ -64,6 +64,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
             'scholarship_interest' => 'boolean',
             'study_profile_completed_at' => 'datetime',
             'deadline_reminders_opt_out' => 'boolean',
+            'weekly_digest_sent_at' => 'datetime',
             // Encrypted at rest — plain Eloquent casts, no extra package needed.
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
@@ -155,6 +156,11 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
     public function journeyProgress(): HasMany
     {
         return $this->hasMany(JourneyProgress::class);
+    }
+
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
     }
 
     public function hasCompletedStudyProfile(): bool

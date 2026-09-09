@@ -43,13 +43,13 @@
         </div>
     </x-ui.card>
 
-    @if ($grouped->isEmpty())
+    @if ($grouped->isEmpty() && empty($this->getGlossary()))
         <x-ui.empty-state icon="heroicon-o-magnifying-glass" heading="No matching answers">
             <a href="{{ route('filament.admin.pages.support-chat') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-500">
                 <x-heroicon-o-chat-bubble-left-right class="h-4 w-4" /> Ask our team
             </a>
         </x-ui.empty-state>
-    @else
+    @elseif ($grouped->isNotEmpty())
         <div class="space-y-6">
             @foreach ($grouped as $categoryName => $entries)
                 <div>
@@ -69,6 +69,21 @@
                     </div>
                 </div>
             @endforeach
+        </div>
+    @endif
+
+    @php($glossary = $this->getGlossary())
+    @if (! empty($glossary))
+        <div>
+            <div class="ui-eyebrow mb-2">Glossary — Italian study &amp; visa terms</div>
+            <div class="ui-grid ui-grid--2">
+                @foreach ($glossary as $g)
+                    <x-ui.card class="text-sm">
+                        <div class="font-semibold">{{ $g['term'] }}</div>
+                        <p class="mt-1 text-xs leading-snug text-gray-600 dark:text-gray-400">{{ $g['definition'] }}</p>
+                    </x-ui.card>
+                @endforeach
+            </div>
         </div>
     @endif
 

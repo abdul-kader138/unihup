@@ -85,7 +85,7 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
-                fn () => self::resolveEchoScript(),
+                fn () => self::resolvePwaHead().self::resolveEchoScript(),
             )
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('15rem')
@@ -435,6 +435,11 @@ CSS,
     .ui-stat-value { font-size: 1.4rem; font-weight: 700; line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
     .ui-progress { height: .4rem; border-radius: 9999px; background: rgb(var(--gray-950) / .1); overflow: hidden; }
     .ui-progress__bar { height: 100%; border-radius: 9999px; background: rgb(var(--primary-500)); transition: width .4s cubic-bezier(.4,0,.2,1); }
+    .ui-term {
+        text-decoration: none;
+        border-bottom: 1px dotted rgb(var(--primary-500) / .6);
+        cursor: help;
+    }
     .ui-empty { text-align: center; padding: 2rem 1.25rem; }
     .ui-empty__icon {
         display: inline-flex; align-items: center; justify-content: center;
@@ -531,6 +536,31 @@ CSS;
     // otherwise the pages fall back to wire:poll and this stays out of the
     // DOM entirely. Pusher + Echo are pulled from a CDN so no npm build step
     // is required to switch realtime on.
+    /**
+     * Makes the panel an installable PWA and wires up the web-push bootstrap:
+     * the manifest link, a theme-color, the VAPID public key (so the browser
+     * can create a subscription), and public/js/push.js which registers the
+     * service worker. Push stays dormant until the user opts in from their
+     * profile — see resources/views/filament/partials/push-toggle.blade.php.
+     */
+    protected static function resolvePwaHead(): string
+    {
+        $manifest = asset('manifest.webmanifest');
+        $icon = asset('icons/unihup-icon.svg');
+        $pushJs = asset('js/push.js');
+        $vapid = e((string) config('webpush.public_key'));
+
+        return <<<HTML
+        <link rel="manifest" href="{$manifest}">
+        <link rel="apple-touch-icon" href="{$icon}">
+        <meta name="theme-color" content="#4f46e5">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-title" content="UniHup">
+        <meta name="webpush-public-key" content="{$vapid}">
+        <script src="{$pushJs}" defer></script>
+        HTML;
+    }
+
     protected static function resolveEchoScript(): string
     {
         try {

@@ -14,7 +14,7 @@
             programs, keep your documents together, and stay ahead of every deadline.
         </p>
         @unless ($summary['profile_complete'])
-            <a href="{{ \App\Filament\Auth\EditProfile::getUrl() }}"
+            <a href="{{ \App\Filament\Pages\Onboarding::getUrl() }}"
                class="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-primary-700 ring-1 ring-primary-500/20 backdrop-blur transition hover:bg-white dark:bg-white/10 dark:text-primary-300 dark:hover:bg-white/15">
                 <x-heroicon-o-sparkles class="h-3.5 w-3.5" />
                 Complete your study profile to personalise this page
@@ -65,6 +65,32 @@
             <x-ui.progress :value="$guides['percent']" class="mt-2" />
         </x-ui.stat>
     </div>
+
+    {{-- For you --}}
+    @php($recommendations = $this->getRecommendations())
+    @if (! empty($recommendations))
+        <div>
+            <div class="ui-eyebrow mb-2">For you</div>
+            <div class="ui-grid ui-grid--3">
+                @foreach ($recommendations as $rec)
+                    <x-ui.card class="flex flex-col">
+                        <div class="flex items-start gap-2.5">
+                            <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600 dark:bg-primary-400/10 dark:text-primary-400">
+                                <x-dynamic-component :component="$rec['icon']" class="h-4 w-4" />
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-[0.8125rem] font-semibold leading-snug">{{ $rec['title'] }}</p>
+                                <p class="mt-0.5 text-xs leading-snug text-gray-500 dark:text-gray-400">{{ $rec['description'] }}</p>
+                            </div>
+                        </div>
+                        <a href="{{ $rec['url'] }}" class="mt-auto pt-3 text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400">
+                            {{ $rec['cta'] }} &rarr;
+                        </a>
+                    </x-ui.card>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     {{-- Next deadlines --}}
     @if ($deadlines->isNotEmpty())

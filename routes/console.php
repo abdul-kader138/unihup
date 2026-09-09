@@ -40,3 +40,17 @@ Schedule::command('unihup:send-deadline-reminders')
     ->dailyAt('07:00')
     ->name('deadline-reminders')
     ->withoutOverlapping();
+
+// Monday-morning "your week" digest — deadlines, next checklist steps,
+// stalled applications. Once per ISO week (guarded on the command).
+Schedule::command('unihup:send-weekly-digest')
+    ->weeklyOn(1, '08:00')
+    ->name('weekly-digest')
+    ->withoutOverlapping();
+
+// Weekly reachability sweep of every external catalog link — results feed
+// the admin data-freshness widget.
+Schedule::command('unihup:check-links')
+    ->weeklyOn(1, '04:30')
+    ->name('link-check')
+    ->withoutOverlapping(120);

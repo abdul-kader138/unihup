@@ -8,6 +8,7 @@ use App\Models\ShortlistItem;
 use App\Support\AdmissionTestCopy;
 use App\Support\DocumentRecognitionCopy;
 use App\Support\JourneyTemplate;
+use App\Support\Recommendations;
 use App\Support\VisaArrivalCopy;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
@@ -90,6 +91,16 @@ class MyJourney extends Page
     }
 
     /**
+     * "For you" — a short, prioritised list of next useful moves.
+     *
+     * @return array<int, array{key: string, icon: string, title: string, description: string, url: string, cta: string}>
+     */
+    public function getRecommendations(): array
+    {
+        return Recommendations::for(auth()->user());
+    }
+
+    /**
      * The next few relevant deadlines, for the strip above the checklist.
      *
      * @return Collection<int, Deadline>
@@ -113,6 +124,8 @@ class MyJourney extends Page
             ['title' => 'Compare', 'description' => 'Saved programs side by side', 'icon' => 'heroicon-o-table-cells', 'url' => CompareShortlist::getUrl()],
             ['title' => 'My Deadlines', 'description' => 'Every date on your shortlist, with calendar export', 'icon' => 'heroicon-o-calendar-days', 'url' => MyDeadlines::getUrl()],
             ['title' => 'Cost Estimator', 'description' => 'Rough yearly cost of a saved program', 'icon' => 'heroicon-o-calculator', 'url' => CostEstimator::getUrl()],
+            ['title' => 'Budget Planner', 'description' => 'One-off + yearly budget for the whole course, in your currency', 'icon' => 'heroicon-o-banknotes', 'url' => BudgetPlanner::getUrl()],
+            ['title' => 'Scholarships', 'description' => 'Match DSU / national funding and track deadlines', 'icon' => 'heroicon-o-gift', 'url' => MyScholarships::getUrl()],
             ['title' => 'Admission Tests', 'description' => 'TOLC / IMAT and the semestre filtro', 'icon' => 'heroicon-o-pencil-square', 'url' => route('filament.admin.pages.admission-tests')],
             ['title' => 'Doc Recognition', 'description' => 'Dichiarazione di Valore / CIMEA', 'icon' => 'heroicon-o-document-check', 'url' => route('filament.admin.pages.doc-recognition')],
             ['title' => 'Visa & Arrival', 'description' => 'Type D visa, permesso di soggiorno, codice fiscale', 'icon' => 'heroicon-o-identification', 'url' => route('filament.admin.pages.visa-arrival')],

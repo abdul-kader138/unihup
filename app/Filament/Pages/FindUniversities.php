@@ -114,6 +114,7 @@ class FindUniversities extends Page implements HasTable
                                 ->searchable(['name', 'canonical_name'])
                                 ->sortable()
                                 ->formatStateUsing(fn ($state, DegreeProgram $record) => $record->university->display_name)
+                                ->url(fn (DegreeProgram $record) => UniversityProfile::getUrl(['id' => $record->university_id]))
                                 ->wrap(),
 
                             TextColumn::make('degree_level')

@@ -144,6 +144,14 @@ class EditProfile extends BaseEditProfile
                                     ->helperText('We email you 14, 3 and 1 days before deadlines on your saved programs. Turn this on to stop them.'),
                             ]),
 
+                        Section::make('Notifications')
+                            ->description('Browser push for deadline reminders on the devices you turn it on.')
+                            ->schema([
+                                Placeholder::make('push_notifications')
+                                    ->label('')
+                                    ->content(fn () => view('filament.partials.push-toggle')),
+                            ]),
+
                         Section::make('Two-Factor Authentication')
                             ->schema([
                                 Placeholder::make('two_factor_status')

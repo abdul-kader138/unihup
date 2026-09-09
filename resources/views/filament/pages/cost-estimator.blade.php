@@ -64,6 +64,7 @@
                         No regional body with a published amount matched this university's region.
                     @endif
                 </span>
+                <a href="{{ \App\Filament\Pages\MyScholarships::getUrl() }}" class="mt-auto pt-2 text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400">Match &amp; track scholarships &rarr;</a>
             </x-ui.card>
         </div>
 
@@ -77,7 +78,9 @@
 
         <x-ui.card class="text-xs text-gray-600 dark:text-gray-400">
             {{ $this->getIseeBandsNote() }}
-            Health insurance, the visa fee, travel and one-off setup costs are <strong>not</strong> included.
+            Health insurance, the visa fee, travel and one-off setup costs are <strong>not</strong> included here &mdash;
+            the <a href="{{ \App\Filament\Pages\BudgetPlanner::getUrl() }}" class="font-semibold text-primary-600 hover:underline dark:text-primary-400">Budget Planner</a>
+            adds those and rolls up a whole-course total.
             Always budget against the university's own fee page and a live cost-of-living index.
         </x-ui.card>
     @endif

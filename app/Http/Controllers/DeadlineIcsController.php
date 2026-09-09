@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deadline;
+use App\Models\ScholarshipTracker;
 use Illuminate\Http\Response;
 
 /**
@@ -38,6 +39,22 @@ class DeadlineIcsController extends Controller
                 $deadline->categoryLabel().
                 ($deadline->url ? "\n".$deadline->url : '')
             ));
+            $lines[] = 'END:VEVENT';
+        }
+
+        $scholarships = ScholarshipTracker::query()
+            ->where('user_id', auth()->id())
+            ->whereNotNull('deadline_at')
+            ->get();
+
+        foreach ($scholarships as $s) {
+            $start = $s->deadline_at->copy()->startOfDay();
+            $lines[] = 'BEGIN:VEVENT';
+            $lines[] = 'UID:scholarship-'.$s->id.'@unihup';
+            $lines[] = 'DTSTAMP:'.now()->utc()->format('Ymd\THis\Z');
+            $lines[] = 'DTSTART;VALUE=DATE:'.$start->format('Ymd');
+            $lines[] = 'DTEND;VALUE=DATE:'.$start->copy()->addDay()->format('Ymd');
+            $lines[] = 'SUMMARY:'.$this->escape($s->label.' — scholarship deadline');
             $lines[] = 'END:VEVENT';
         }
 

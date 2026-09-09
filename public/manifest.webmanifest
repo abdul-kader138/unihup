@@ -1,0 +1,25 @@
+{
+  "name": "UniHup — Study in Italy",
+  "short_name": "UniHup",
+  "description": "Your Italian university admission journey — shortlist, checklist, deadlines and documents in one place.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f1f3f5",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/icons/unihup-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/unihup-icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

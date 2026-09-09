@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Filament\Pages\MyJourney;
+use App\Filament\Pages\Onboarding;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Filament\Facades\Filament;
@@ -66,7 +67,9 @@ class GoogleAuthController extends Controller
         Filament::auth()->login($user);
         session()->regenerate();
 
-        return redirect()->intended(MyJourney::getUrl());
+        $home = $user->hasCompletedStudyProfile() ? MyJourney::getUrl() : Onboarding::getUrl();
+
+        return redirect()->intended($home);
     }
 
     private function failed(string $message): RedirectResponse

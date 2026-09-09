@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="UniHup">
+  <rect width="512" height="512" rx="96" fill="#4f46e5"/>
+  <path d="M168 150v130c0 48 39 82 88 82s88-34 88-82V150" fill="none" stroke="#ffffff" stroke-width="46" stroke-linecap="round"/>
+  <rect x="150" y="386" width="212" height="34" rx="17" fill="#ffffff"/>
+</svg>

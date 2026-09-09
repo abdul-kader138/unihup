@@ -2,10 +2,14 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\ApplicationProgress;
 use App\Models\ShortlistItem;
+use App\Models\StudentDocument;
+use App\Support\ApplicationSteps;
 use App\Support\CostEstimator as CostEstimatorSupport;
 use App\Support\EligibilityEngine;
 use Filament\Actions\Action as HeaderAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Textarea;
 use Filament\Pages\Page;
 use Filament\Tables\Actions\Action;
@@ -62,7 +66,7 @@ class MyApplications extends Page implements HasTable
             ->query(
                 ShortlistItem::query()
                     ->where('user_id', auth()->id())
-                    ->with(['degreeProgram.university', 'degreeProgram.subject'])
+                    ->with(['degreeProgram.university', 'degreeProgram.subject', 'applicationProgress', 'documents'])
             )
             ->defaultSort('updated_at', 'desc')
             ->columns([
@@ -79,6 +83,7 @@ class MyApplications extends Page implements HasTable
                                 ->label('University')
                                 ->weight('bold')
                                 ->formatStateUsing(fn (ShortlistItem $record) => $record->degreeProgram->university->display_name)
+                                ->url(fn (ShortlistItem $record) => UniversityProfile::getUrl(['id' => $record->degreeProgram->university_id]))
                                 ->wrap(),
                             TextColumn::make('degreeProgram.name')
                                 ->label('Program')
@@ -113,6 +118,42 @@ class MyApplications extends Page implements HasTable
                         ->tooltip(fn (ShortlistItem $record) => implode(' ', $this->eligibilityFor($record)['reasons']))
                         ->visible(fn () => auth()->user()->hasCompletedStudyProfile()),
 
+                    TextColumn::make('application_checklist')
+                        ->label('')
+                        ->badge()
+                        ->icon('heroicon-o-clipboard-document-check')
+                        ->getStateUsing(function (ShortlistItem $record) {
+                            $c = $record->applicationChecklist((bool) auth()->user()->is_eu_citizen);
+
+                            return "Application {$c['done']}/{$c['total']}";
+                        })
+                        ->color(function (ShortlistItem $record) {
+                            $c = $record->applicationChecklist((bool) auth()->user()->is_eu_citizen);
+
+                            return match (true) {
+                                $c['percent'] === 100 => 'success',
+                                $c['percent'] > 0 => 'info',
+                                default => 'gray',
+                            };
+                        }),
+
+                    TextColumn::make('docs_link')
+                        ->label('')
+                        ->badge()
+                        ->color('gray')
+                        ->icon('heroicon-o-paper-clip')
+                        ->getStateUsing(function (ShortlistItem $record) {
+                            $attached = $record->documents->count();
+
+                            if ($attached === 0) {
+                                return null;
+                            }
+
+                            $submitted = $record->documents->where('pivot.status', 'submitted')->count();
+
+                            return "Docs {$submitted}/{$attached} submitted";
+                        }),
+
                     TextColumn::make('estimated_cost')
                         ->label('')
                         ->badge()
@@ -146,6 +187,87 @@ class MyApplications extends Page implements HasTable
                     ))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
+
+                Action::make('trackApplication')
+                    ->label('Application steps')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->link()
+                    ->modalHeading(fn (ShortlistItem $record) => 'Application checklist — '.$record->degreeProgram->name)
+                    ->modalSubmitActionLabel('Save')
+                    ->fillForm(fn (ShortlistItem $record) => [
+                        'steps' => $record->applicationProgress->where('done', true)->pluck('step_key')->all(),
+                    ])
+                    ->form(function (ShortlistItem $record) {
+                        $steps = ApplicationSteps::forItem($record, (bool) auth()->user()->is_eu_citizen);
+
+                        return [
+                            CheckboxList::make('steps')
+                                ->label('Tick what you have done for this program')
+                                ->options(collect($steps)->pluck('label', 'key'))
+                                ->descriptions(collect($steps)->pluck('hint', 'key'))
+                                ->bulkToggleable()
+                                ->columns(1),
+                        ];
+                    })
+                    ->action(function (ShortlistItem $record, array $data) {
+                        $checked = collect($data['steps'] ?? []);
+                        $now = now();
+
+                        foreach (ApplicationSteps::keys() as $key) {
+                            $done = $checked->contains($key);
+
+                            ApplicationProgress::updateOrCreate(
+                                ['shortlist_item_id' => $record->id, 'step_key' => $key],
+                                ['done' => $done, 'completed_at' => $done ? $now : null],
+                            );
+                        }
+
+                        $record->load('applicationProgress');
+                    }),
+
+                Action::make('linkDocuments')
+                    ->label('Documents')
+                    ->icon('heroicon-o-paper-clip')
+                    ->link()
+                    ->modalHeading(fn (ShortlistItem $record) => 'Documents for '.$record->degreeProgram->name)
+                    ->modalSubmitActionLabel('Save')
+                    ->visible(fn () => auth()->user()->studentDocuments()->exists())
+                    ->fillForm(fn (ShortlistItem $record) => [
+                        'attached' => $record->documents->pluck('id')->all(),
+                        'submitted' => $record->documents->where('pivot.status', 'submitted')->pluck('id')->all(),
+                    ])
+                    ->form(function () {
+                        $options = auth()->user()->studentDocuments()
+                            ->get()
+                            ->mapWithKeys(fn (StudentDocument $d) => [$d->id => trim($d->typeLabel().($d->label ? " — {$d->label}" : ''))]);
+
+                        return [
+                            CheckboxList::make('attached')
+                                ->label('Documents this application needs')
+                                ->helperText('Link items from your vault. Manage the vault in My Documents.')
+                                ->options($options)
+                                ->columns(1)
+                                ->bulkToggleable(),
+                            CheckboxList::make('submitted')
+                                ->label('...and already uploaded to the university portal')
+                                ->options($options)
+                                ->columns(1),
+                        ];
+                    })
+                    ->action(function (ShortlistItem $record, array $data) {
+                        $attached = collect($data['attached'] ?? [])->map(fn ($v) => (int) $v);
+                        $submitted = collect($data['submitted'] ?? [])->map(fn ($v) => (int) $v);
+                        $ownIds = auth()->user()->studentDocuments()->pluck('id');
+
+                        $sync = $attached->intersect($ownIds)
+                            ->mapWithKeys(fn ($id) => [
+                                (int) $id => ['status' => $submitted->contains($id) ? 'submitted' : 'attached'],
+                            ])
+                            ->all();
+
+                        $record->documents()->sync($sync);
+                        $record->load('documents');
+                    }),
 
                 Action::make('editNotes')
                     ->label('Notes')

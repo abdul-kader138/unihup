@@ -15,6 +15,7 @@
         "laravel/sanctum": "^4.3",
         "laravel/socialite": "^5.30",
         "laravel/tinker": "^3.0",
+        "minishlink/web-push": "^11.0",
         "pragmarx/google2fa-qrcode": "^4.0",
         "spatie/laravel-activitylog": "^5.0",
         "spatie/laravel-permission": "^6.25"

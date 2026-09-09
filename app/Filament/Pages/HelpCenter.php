@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\FaqEntry;
+use App\Support\Glossary;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
 
@@ -66,5 +67,22 @@ class HelpCenter extends Page
     {
         $this->search = '';
         $this->category = null;
+    }
+
+    /**
+     * Glossary entries, filtered by the same search box.
+     *
+     * @return array<int, array{key: string, term: string, definition: string}>
+     */
+    public function getGlossary(): array
+    {
+        $term = trim($this->search);
+
+        return collect(Glossary::all())
+            ->when($term !== '', fn ($c) => $c->filter(
+                fn ($e) => str_contains(mb_strtolower($e['term'].' '.$e['definition']), mb_strtolower($term))
+            ))
+            ->values()
+            ->all();
     }
 }

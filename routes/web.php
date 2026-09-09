@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\DeadlineIcsController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\StudentDocumentController;
 use App\Http\Controllers\WhatsAppMediaController;
 use App\Http\Controllers\WhatsAppWebhookController;
@@ -52,3 +53,9 @@ Route::get('/student-documents/{document}/download', StudentDocumentController::
 Route::get('/my-deadlines.ics', DeadlineIcsController::class)
     ->middleware('auth')
     ->name('deadlines.ics');
+
+// Browser push subscriptions for the signed-in user (see public/js/push.js).
+Route::middleware('auth')->group(function () {
+    Route::post('/push/subscription', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
+    Route::delete('/push/subscription', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
+});

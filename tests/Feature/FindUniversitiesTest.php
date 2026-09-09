@@ -25,7 +25,7 @@ class FindUniversitiesTest extends TestCase
         $this->seed(ShieldSeeder::class);
     }
 
-    public function test_a_new_registration_lands_on_my_journey(): void
+    public function test_a_new_registration_lands_on_the_onboarding_wizard(): void
     {
         Livewire::test(Register::class)
             ->fillForm([
@@ -37,7 +37,7 @@ class FindUniversitiesTest extends TestCase
             ])
             ->call('register')
             ->assertHasNoFormErrors()
-            ->assertRedirect('/my-journey');
+            ->assertRedirect('/get-started');
 
         $user = User::where('email', 'ada@example.com')->firstOrFail();
         $this->assertTrue($user->hasRole('panel_user'));

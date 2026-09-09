@@ -25,6 +25,11 @@
                     {{ $university->website_url }}
                 </a>
             @endif
+            <div>
+                <a href="{{ \App\Filament\Pages\UniversityProfile::getUrl(['id' => $university->id]) }}" class="text-xs font-medium text-primary-600 hover:underline dark:text-primary-400">
+                    All programs &amp; deadlines at {{ $university->display_name }} &rarr;
+                </a>
+            </div>
             @if ($ranking)
                 <div class="mt-1 inline-flex items-center gap-1 rounded-full bg-warning-50 px-2 py-0.5 text-xs font-medium text-warning-700 dark:bg-warning-400/10 dark:text-warning-400">
                     <x-heroicon-o-trophy class="h-3.5 w-3.5" />

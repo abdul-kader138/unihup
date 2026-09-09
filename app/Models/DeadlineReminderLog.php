@@ -22,6 +22,8 @@ class DeadlineReminderLog extends Model
 
     public const CHANNEL_WHATSAPP = 'whatsapp';
 
+    public const CHANNEL_WEBPUSH = 'webpush';
+
     protected function casts(): array
     {
         return [
