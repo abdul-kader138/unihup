@@ -4,12 +4,13 @@
     $appName = Setting::get('app_name', 'UniHup');
     $tagline = Setting::get('app_tagline', 'Find your degree program in Italy.');
 
-    // Fixed single theme (deep slate/indigo) — no admin-configurable theme
-    // picker, unlike wma-bot's version. Simple, professional, one look.
+    // Left brand panel: a deep slate → indigo gradient with an indigo accent.
+    // The right-hand form side is a light card on a neutral grey canvas
+    // (see CSS below), matching the panel's standard light-first theme.
     $start  = '15 23 42';   // slate-900
     $mid    = '30 27 75';   // indigo-950
     $end    = '49 46 129';  // indigo-900
-    $accentRgb = '129 140 248'; // indigo-400
+    $accentRgb = '129 140 248'; // indigo-400 (== --primary-400)
     $accent = "rgb({$accentRgb})";
 
     [$ar, $ag, $ab] = explode(' ', $accentRgb);
@@ -39,16 +40,21 @@
         "Save your preferred subject so results are ready every time you sign in.",
         'Every listing links back to the official admissions source to verify.',
     ];
+
+    // Italian tricolore
+    $flagGreen = '#008C45';
+    $flagWhite = '#F4F5F0';
+    $flagRed   = '#CD212A';
+    $tricolore = "linear-gradient(90deg, {$flagGreen} 0 33.33%, {$flagWhite} 33.33% 66.66%, {$flagRed} 66.66% 100%)";
+    $tricoloreV = "linear-gradient(180deg, {$flagGreen} 0 33.33%, {$flagWhite} 33.33% 66.66%, {$flagRed} 66.66% 100%)";
 @endphp
 
 {{-- ── Layout CSS ──────────────────────────────────────────────────────────── --}}
 <style>
-    /* Filament's default page background (bg-gray-950 in dark mode) would
-       otherwise show through as a flat, harsh black next to the gradient
-       panel — this keeps the right-hand side visually part of the same
-       dark palette instead of a jarring two-tone seam. */
+    /* Right-hand side is a neutral light-grey canvas; the left panel carries
+       its own dark gradient via inline style. */
     body.fi-body {
-        background: rgb({{ $start }}) !important;
+        background: #f1f3f5 !important;
     }
 
     @media (min-width: 1024px) {
@@ -102,12 +108,19 @@
         .fi-simple-page > section {
             max-width: 22rem;
             width: 100%;
-            background: rgba(255,255,255,.035);
-            border: 1px solid rgba(255,255,255,.08);
+            background: #ffffff;
+            border: 1px solid rgb(2 6 23 / .1);
             border-radius: 1rem;
-            box-shadow: 0 20px 60px -15px rgba(0,0,0,.5);
+            box-shadow: 0 24px 60px -24px rgb(2 6 23 / .25), 0 2px 8px rgb(2 6 23 / .05);
             padding: 2.25rem 2rem;
             box-sizing: border-box;
+        }
+    }
+    /* Mobile: no split panel, just centre the light card on the grey canvas. */
+    @media (max-width: 1023px) {
+        .fi-simple-page > section {
+            background: #ffffff;
+            border: 1px solid rgb(2 6 23 / .1);
         }
     }
     @media (max-width: 1023px) {
@@ -180,6 +193,9 @@
         padding: 2.5rem 3rem;
     "
 >
+    {{-- ── Italian tricolore edge ─────────────────────────────────────────── --}}
+    <div style="position:absolute;top:0;bottom:0;left:0;width:6px;background:{{ $tricoloreV }};pointer-events:none;z-index:2;"></div>
+
     {{-- ── Background layers ──────────────────────────────────────────────── --}}
 
     <div style="position:absolute;inset:0;background-image:radial-gradient(circle, {{ $a18 }} 1px, transparent 1px);background-size:30px 30px;pointer-events:none;"></div>
@@ -198,7 +214,8 @@
                 {{ strtoupper(substr($appName, 0, 1)) }}
             </div>
             <span style="font-size:1.1rem;font-weight:700;letter-spacing:-.02em;color:{{ $panelText }};">{{ $appName }}</span>
-            <span style="margin-left:auto;font-size:.62rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.55);background:{{ $badgeBg }};border:1px solid {{ $badgeBorder }};padding:.28rem .7rem;border-radius:9999px;">
+            <span style="margin-left:auto;display:inline-flex;align-items:center;gap:.5rem;font-size:.62rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.6);background:{{ $badgeBg }};border:1px solid {{ $badgeBorder }};padding:.28rem .6rem .28rem .5rem;border-radius:9999px;">
+                <span style="width:1.15rem;height:.78rem;border-radius:2px;background:{{ $tricolore }};box-shadow:0 0 0 1px rgba(255,255,255,.15);flex-shrink:0;"></span>
                 Italy
             </span>
         </div>
@@ -252,16 +269,15 @@
             {{-- ── Headline ────────────────────────────────────────────────── --}}
             <div style="display:flex;flex-direction:column;gap:.55rem;">
                 <h2 style="font-size:clamp(1.8rem,3vw,2.4rem);font-weight:800;letter-spacing:-.04em;line-height:1.13;color:{{ $panelText }};margin:0;">
-                    Study in <span style="color:{{ $accent }};">Italy</span>
+                    Study in <span style="position:relative;color:{{ $accent }};white-space:nowrap;">Italy<span style="position:absolute;left:0;right:0;bottom:-.28rem;height:.28rem;border-radius:2px;background:{{ $tricolore }};"></span></span>
                 </h2>
-                <p style="font-size:.9rem;color:{{ $panelMuted }};line-height:1.6;max-width:28rem;margin:0;">{{ $tagline }}</p>
+                <p style="margin:.35rem 0 0;font-size:.9rem;color:{{ $panelMuted }};line-height:1.6;max-width:28rem;">{{ $tagline }}</p>
             </div>
 
             {{-- ── Divider ─────────────────────────────────────────────────── --}}
-            <div style="display:flex;align-items:center;gap:.75rem;">
-                <div style="flex:1;height:1px;background:linear-gradient(to right, {{ $accent }}, {{ $dividerColor }});opacity:.35;"></div>
-                <svg viewBox="0 0 8 8" fill="{{ $accent }}" style="width:.5rem;height:.5rem;opacity:.5;flex-shrink:0;"><circle cx="4" cy="4" r="4"/></svg>
-                <div style="flex:1;height:1px;background:linear-gradient(to left, {{ $accent }}, {{ $dividerColor }});opacity:.35;"></div>
+            <div style="display:flex;align-items:center;gap:.6rem;">
+                <div style="width:1.5rem;height:3px;border-radius:2px;background:{{ $tricolore }};flex-shrink:0;"></div>
+                <div style="flex:1;height:1px;background:linear-gradient(to right, {{ $dividerColor }}, transparent);"></div>
             </div>
 
             {{-- ── Numbered features ───────────────────────────────────────── --}}

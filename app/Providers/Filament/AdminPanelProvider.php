@@ -36,7 +36,8 @@ class AdminPanelProvider extends PanelProvider
 {
     // ── Available admin color themes ──────────────────────────────────────────
     public static array $themes = [
-        'indigo' => ['label' => 'Indigo',     'color' => 'indigo'],
+        'indigo' => ['label' => 'Indigo (default)', 'color' => 'indigo'],
+        'terracotta' => ['label' => 'Terracotta', 'color' => 'terracotta'],
         'amber' => ['label' => 'Amber Gold', 'color' => 'amber'],
         'emerald' => ['label' => 'Emerald',    'color' => 'emerald'],
         'rose' => ['label' => 'Rose',       'color' => 'rose'],
@@ -73,6 +74,8 @@ class AdminPanelProvider extends PanelProvider
             ->favicon(fn () => self::resolveFaviconUrl())
             ->colors([
                 'primary' => self::resolveThemeColor(),
+                // Crisp cool-neutral greys for the chrome (sidebar, text, borders).
+                'gray' => Color::Slate,
             ])
             ->defaultThemeMode(self::resolveDefaultThemeMode())
             ->darkMode(...array_values(self::resolveDarkModeArgs()))
@@ -147,9 +150,29 @@ class AdminPanelProvider extends PanelProvider
     // command, including the very first `migrate` on a fresh install, before
     // the settings table exists.
 
+    /**
+     * Curated warm terracotta ramp — a bit earthy, reads well as buttons in
+     * light mode and as accents on the deep slate-blue dark surface. Values
+     * are "r g b" triples, the shape Filament expects.
+     */
+    public const TERRACOTTA = [
+        50 => '253 245 240',
+        100 => '250 231 219',
+        200 => '244 205 179',
+        300 => '236 173 133',
+        400 => '227 135 88',
+        500 => '213 103 58',
+        600 => '193 82 46',
+        700 => '160 63 38',
+        800 => '129 53 38',
+        900 => '106 47 35',
+        950 => '58 22 16',
+    ];
+
     protected static function resolveThemeColor(): array
     {
         $colorMap = [
+            'terracotta' => self::TERRACOTTA,
             'indigo' => Color::Indigo,
             'amber' => Color::Amber,
             'emerald' => Color::Emerald,
@@ -182,37 +205,37 @@ class AdminPanelProvider extends PanelProvider
             'light', 'sepia' => 'light',
             'dark', 'high_contrast', 'midnight' => 'dark',
             'system' => 'system',
-            default => 'dark',
+            default => 'light',
         };
     }
 
     protected static function resolveDefaultThemeMode(): ThemeMode
     {
         try {
-            $mode = Setting::get('admin_panel_theme_mode', 'dark');
+            $mode = Setting::get('admin_panel_theme_mode', 'light');
         } catch (\Throwable) {
-            $mode = 'dark';
+            $mode = 'light';
         }
 
         return match (self::resolveNativeThemeModeKey($mode)) {
-            'light' => ThemeMode::Light,
+            'dark' => ThemeMode::Dark,
             'system' => ThemeMode::System,
-            default => ThemeMode::Dark,
+            default => ThemeMode::Light,
         };
     }
 
     protected static function resolveDarkModeArgs(): array
     {
         try {
-            $mode = Setting::get('admin_panel_theme_mode', 'dark');
+            $mode = Setting::get('admin_panel_theme_mode', 'light');
         } catch (\Throwable) {
-            $mode = 'dark';
+            $mode = 'light';
         }
 
         return match (self::resolveNativeThemeModeKey($mode)) {
-            'light' => ['condition' => false, 'isForced' => false],
+            'dark' => ['condition' => true,  'isForced' => true],
             'system' => ['condition' => true,  'isForced' => false],
-            default => ['condition' => true,  'isForced' => true],
+            default => ['condition' => false, 'isForced' => false],
         };
     }
 
@@ -220,9 +243,9 @@ class AdminPanelProvider extends PanelProvider
     protected static function resolveAdminPanelModeStyles(): string
     {
         try {
-            $mode = Setting::get('admin_panel_theme_mode', 'dark');
+            $mode = Setting::get('admin_panel_theme_mode', 'light');
         } catch (\Throwable) {
-            $mode = 'dark';
+            $mode = 'light';
         }
 
         $custom = match ($mode) {
@@ -279,52 +302,92 @@ CSS,
 <style>
     .fi-theme-switcher { display: none !important; }
 
-    .fi-sidebar-nav { gap: .125rem; padding-top: .5rem; }
-
-    .fi-sidebar-group + .fi-sidebar-group { margin-top: 1rem; }
-
-    .fi-sidebar-group-label {
-        font-size: .6875rem;
-        font-weight: 600;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        opacity: .6;
+    /* ══ Sidebar — a deep indigo-charcoal rail against the light content ══
+       Dark in BOTH panel modes: gives the UI real depth/colour instead of a
+       sea of white, and makes the logo + tricolore pop. */
+    .fi-sidebar,
+    .fi-sidebar .fi-sidebar-header,
+    .fi-sidebar .fi-sidebar-nav {
+        background: linear-gradient(180deg, #17162a, #131120) !important;
+        border-color: rgb(255 255 255 / .07) !important;
     }
+    /* Pin the sidebar so its dark panel always fills the viewport, even on
+       long scrolling pages (Filament leaves it position: relative here). */
+    .fi-sidebar {
+        position: sticky !important;
+        top: 0;
+        align-self: flex-start;
+        height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    .fi-sidebar .fi-logo,
+    .fi-sidebar .fi-sidebar-header a,
+    .fi-sidebar .fi-sidebar-header span,
+    .fi-sidebar-header .fi-icon-btn { color: #fff !important; }
+    .fi-sidebar .fi-icon-btn:hover { background-color: rgb(255 255 255 / .08) !important; }
+
+    .fi-sidebar-nav { gap: .1rem; padding: .625rem .625rem 1rem; }
+    .fi-sidebar-group + .fi-sidebar-group { margin-top: 1rem; }
+    .fi-sidebar-group-label {
+        padding-inline: .5rem;
+        margin-bottom: .15rem;
+        font-size: .6875rem;
+        font-weight: 700;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        color: rgb(148 163 184);
+    }
+    .fi-sidebar-group-collapse-button { color: rgb(100 116 139) !important; }
+
+    /* Filament draws a dot + connector line for iconless grouped items — hide
+       it; items read as clean text links under their section header. */
+    .fi-sidebar-item-grouped-border { display: none !important; }
+    .fi-sidebar-nav ul, .fi-sidebar-group-items { list-style: none !important; }
+    .fi-sidebar-group:has(.fi-sidebar-group-label) .fi-sidebar-item-button { padding-inline-start: .875rem; }
 
     .fi-sidebar-item-button {
-        border-radius: .5rem;
-        transition: background-color .15s ease, color .15s ease;
         position: relative;
+        gap: .625rem;
+        padding: .5rem .625rem;
+        border-radius: .55rem;
+        font-size: .875rem;
+        font-weight: 500;
+        color: rgb(203 213 225) !important;
+        transition: background-color .14s ease, color .14s ease;
     }
-
     .fi-sidebar-item-button:hover {
-        background-color: rgb(var(--gray-500) / .08);
+        background-color: rgb(255 255 255 / .06) !important;
+        color: #ffffff !important;
     }
+    .fi-sidebar-item-icon {
+        width: 1.2rem; height: 1.2rem;
+        color: rgb(148 163 184) !important;
+        transition: color .14s ease;
+    }
+    .fi-sidebar-item-button:hover .fi-sidebar-item-icon { color: rgb(226 232 240) !important; }
 
-    .fi-sidebar-item-icon { transition: color .15s ease; }
-
-    .fi-sidebar-item.fi-active .fi-sidebar-item-button,
+    .fi-sidebar-item.fi-active > .fi-sidebar-item-button,
     .fi-sidebar-item-button.fi-active {
-        background-color: rgb(var(--primary-500) / .12);
+        background-color: rgb(var(--primary-400) / .2) !important;
+        color: #ffffff !important;
         font-weight: 600;
     }
-
-    .fi-sidebar-item.fi-active .fi-sidebar-item-button::before,
+    .fi-sidebar-item.fi-active > .fi-sidebar-item-button::before,
     .fi-sidebar-item-button.fi-active::before {
         content: "";
         position: absolute;
-        inset-inline-start: -.5rem;
+        inset-inline-start: -.35rem;
         top: 50%;
         transform: translateY(-50%);
         width: 3px;
-        height: 1.25rem;
+        height: 1.35rem;
         border-radius: 9999px;
-        background-color: rgb(var(--primary-500));
+        background-color: rgb(var(--primary-400));
     }
-
     .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
     .fi-sidebar-item-button.fi-active .fi-sidebar-item-icon {
-        color: rgb(var(--primary-500));
+        color: rgb(165 180 252) !important;
     }
 
     /* ── Panel surface polish (refined / premium) ──────────────────────── */
@@ -342,54 +405,63 @@ CSS,
     .fi-btn:active { transform: translateY(.5px); }
 
     /* ── Shared UI kit (used by app/resources/views/components/ui/*) ───── */
+    /* Compact + crisp: tighter padding, denser type, a touch more border. */
     .ui-card {
-        border-radius: .875rem;
-        border: 1px solid rgb(var(--gray-950) / .07);
+        border-radius: .625rem;
+        border: 1px solid rgb(var(--gray-950) / .11);
         background: #fff;
-        box-shadow: 0 1px 2px rgb(2 6 23 / .04);
+        box-shadow: 0 1px 2px rgb(var(--gray-950) / .05);
     }
-    .ui-card--pad { padding: 1.25rem; }
-    .ui-card--hover { transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+    .ui-card--pad { padding: 1rem 1.1rem; }
+    .ui-card--hover { transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease; }
     .ui-card--hover:hover {
-        border-color: rgb(var(--primary-500) / .35);
-        box-shadow: 0 4px 14px rgb(2 6 23 / .07);
+        border-color: rgb(var(--primary-500) / .45);
+        box-shadow: 0 4px 12px rgb(var(--gray-950) / .09);
         transform: translateY(-1px);
     }
     .ui-eyebrow {
-        font-size: .6875rem;
+        font-size: .65rem;
         font-weight: 600;
-        letter-spacing: .07em;
+        letter-spacing: .055em;
         text-transform: uppercase;
         color: rgb(var(--gray-500));
     }
-    .ui-stat-value { font-size: 1.75rem; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
-    .ui-progress { height: .5rem; border-radius: 9999px; background: rgb(var(--gray-950) / .08); overflow: hidden; }
+    .ui-stat-value { font-size: 1.4rem; font-weight: 700; line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .ui-progress { height: .4rem; border-radius: 9999px; background: rgb(var(--gray-950) / .1); overflow: hidden; }
     .ui-progress__bar { height: 100%; border-radius: 9999px; background: rgb(var(--primary-500)); transition: width .4s cubic-bezier(.4,0,.2,1); }
-    .ui-empty { text-align: center; padding: 2.5rem 1.5rem; }
+    .ui-empty { text-align: center; padding: 2rem 1.25rem; }
     .ui-empty__icon {
         display: inline-flex; align-items: center; justify-content: center;
-        width: 3rem; height: 3rem; border-radius: 9999px; margin-bottom: .75rem;
+        width: 2.75rem; height: 2.75rem; border-radius: 9999px; margin-bottom: .625rem;
         background: rgb(var(--primary-500) / .1); color: rgb(var(--primary-600));
     }
     .ui-hero {
         position: relative;
-        border-radius: 1rem;
-        background: linear-gradient(135deg, rgb(var(--primary-500) / .16), rgb(var(--primary-500) / .04));
-        border: 1px solid rgb(var(--primary-500) / .22);
-        padding: 1.5rem 1.5rem 1.5rem 1.75rem;
-        overflow: hidden;
+        border-radius: .625rem;
+        background:
+            radial-gradient(120% 160% at 100% 0%, rgb(var(--primary-500) / .1), transparent 55%),
+            rgb(var(--primary-500) / .05);
+        border: 1px solid rgb(var(--primary-500) / .16);
+        padding: 1.05rem 1.25rem 1.05rem 1.4rem;
     }
     .ui-hero::before {
         content: "";
         position: absolute;
         inset-inline-start: 0; top: 0; bottom: 0;
-        width: 4px;
+        width: 3px;
         background: rgb(var(--primary-500));
+        border-start-start-radius: .625rem;
+        border-end-start-radius: .625rem;
     }
+
+    /* Trim the generous default page chrome so screens feel compact. */
+    .fi-main { padding-top: 1.25rem !important; padding-bottom: 1.5rem !important; }
+    .fi-page > * + * { margin-top: 1rem; }
+    .fi-header { margin-bottom: .25rem; }
 
     /* Responsive grids that don't depend on which Tailwind utilities were
        compiled into the Filament theme build. */
-    .ui-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+    .ui-grid { display: grid; gap: .75rem; grid-template-columns: 1fr; }
     @media (min-width: 640px) {
         .ui-grid--2, .ui-grid--3, .ui-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
@@ -398,15 +470,49 @@ CSS,
         .ui-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
 
-    :is(.dark) .ui-card { background: rgb(255 255 255 / .04); border-color: rgb(255 255 255 / .1); box-shadow: none; }
-    :is(.dark) .ui-card--hover:hover { border-color: rgb(var(--primary-400) / .4); box-shadow: 0 4px 14px rgb(0 0 0 / .3); }
-    :is(.dark) .ui-eyebrow { color: rgb(var(--gray-400)); }
-    :is(.dark) .ui-progress { background: rgb(255 255 255 / .1); }
-    :is(.dark) .ui-hero {
-        border-color: rgb(var(--primary-400) / .3);
-        background: linear-gradient(135deg, rgb(var(--primary-400) / .18), rgb(var(--primary-400) / .03));
+    /* ══ Standard admin theme — structured neutral, single accent ═══════ */
+
+    /* Light: a soft cool-grey canvas so the white cards sit forward */
+    .fi-body, .fi-main { background: #eceef3; }
+    .fi-topbar { background: #ffffff; border-color: rgb(var(--gray-950) / .09) !important; }
+    .fi-section, .fi-ta-ctn, .fi-fo-tabs, .fi-wi-stats-overview-stat {
+        border-color: rgb(var(--gray-950) / .1) !important;
+        box-shadow: 0 1px 2px rgb(var(--gray-950) / .05), 0 1px 3px rgb(var(--gray-950) / .04);
     }
-    :is(.dark) .ui-hero::before { background: rgb(var(--primary-400)); }
+    .fi-section:hover { box-shadow: 0 4px 12px rgb(var(--gray-950) / .08); }
+    .fi-header-heading, .fi-section-header-heading, h1.fi-header-heading { letter-spacing: -.015em; }
+
+    /* A discreet Italian tricolore mark at the top of the sidebar. */
+    .fi-sidebar { position: relative; }
+    .fi-sidebar::before {
+        content: "";
+        position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, #008C45 0 33.33%, #F4F5F0 33.33% 66.66%, #CD212A 66.66% 100%);
+        z-index: 6;
+    }
+
+    /* Dark mode: canvas + topbar (the sidebar is already dark, above). */
+    :is(.dark) .fi-body,
+    :is(.dark) .fi-main { background: #0b1120; }
+    :is(.dark) .fi-topbar {
+        background: #0f172a;
+        border-color: rgb(148 163 184 / .12) !important;
+    }
+    :is(.dark) .fi-section,
+    :is(.dark) .fi-ta-ctn,
+    :is(.dark) .fi-fo-tabs,
+    :is(.dark) .fi-wi-stats-overview-stat {
+        background: #131c31;
+        border-color: rgb(148 163 184 / .1) !important;
+        box-shadow: none;
+    }
+    :is(.dark) .fi-section:hover { box-shadow: 0 4px 16px rgb(0 0 0 / .3); }
+    :is(.dark) .ui-card { background: #131c31; border-color: rgb(148 163 184 / .1); box-shadow: none; }
+    :is(.dark) .ui-card--hover:hover { border-color: rgb(var(--primary-400) / .45); box-shadow: 0 4px 16px rgb(0 0 0 / .35); }
+    :is(.dark) .ui-eyebrow { color: rgb(var(--gray-400)); }
+    :is(.dark) .ui-progress { background: rgb(255 255 255 / .09); }
+    :is(.dark) .ui-hero { background: rgb(var(--primary-400) / .1); border-color: rgb(var(--primary-400) / .22); }
+    :is(.dark) .ui-empty__icon { color: rgb(var(--primary-400)); }
 </style>
 CSS;
 
