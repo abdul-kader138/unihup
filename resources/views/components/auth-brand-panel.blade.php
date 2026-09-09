@@ -202,13 +202,24 @@
        canvas with room to breathe from the screen edges. */
     @media (max-width: 1023px) {
         .auth-brand-panel { display: none !important; }
+
+        /* Filament's simple <main> carries `my-16` (4rem) + `py-12` (3rem) top
+           and bottom. The desktop split layout above zeroes that out, but on
+           mobile it was left in — stacked with the card (and the previous
+           `min-height:100dvh` on the inner page) it pushed everything down and
+           forced a scroll, so the card sat well below centre with a big gap on
+           top. Trim it here and let `.fi-simple-main-ctn` (flex/items-center)
+           do the vertical centring. */
+        .fi-simple-main {
+            margin-block: 1.5rem !important;
+            padding-block: 0 !important;
+            box-shadow: none !important;
+            --tw-ring-shadow: 0 0 #0000 !important;
+        }
         .fi-simple-page {
-            min-height: 100vh;
-            min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            padding: 2rem 1rem;
+            padding: 0 1rem;
             box-sizing: border-box;
         }
         .fi-simple-page > section {
@@ -224,7 +235,7 @@
         }
     }
     @media (max-width: 380px) {
-        .fi-simple-page { padding: 1.25rem .75rem; }
+        .fi-simple-page { padding: 0 .75rem; }
         .fi-simple-page > section { padding: 1.5rem 1.15rem; }
     }
 
