@@ -57,6 +57,49 @@
         background: #f1f3f5 !important;
     }
 
+    /* ── Auth form card is always light ─────────────────────────────────────
+       The login/register/reset form must NOT follow the panel's configured
+       dark / sepia / midnight mode (System Settings > Panel Mode) — otherwise
+       it renders as a white card with near-invisible dark-mode text. Scope
+       everything to `.fi-simple-page > section` (the form card) so the dark
+       left brand panel, which is a sibling, is untouched. */
+    .fi-simple-main, .fi-simple-page { background: transparent !important; }
+    .fi-simple-page > section {
+        color-scheme: light !important;
+        background: #ffffff !important;
+        color: #1e293b !important;
+    }
+    .fi-simple-page > section :is(h1, h2),
+    .fi-simple-page > section .fi-simple-header-heading { color: #0f172a !important; }
+    .fi-simple-page > section :is(label, .fi-fo-field-wrp-label, .fi-fo-field-wrp-label *) { color: #334155 !important; }
+    .fi-simple-page > section :is(.fi-fo-field-wrp-hint, .fi-fo-field-wrp-helper-text) { color: #64748b !important; }
+    .fi-simple-page > section :is(input, select, textarea),
+    .fi-simple-page > section :is(.fi-input-wrp, .fi-input) {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-color: rgb(2 6 23 / .18) !important;
+    }
+    .fi-simple-page > section .fi-input-wrp:focus-within {
+        border-color: rgb(var(--primary-500)) !important;
+        --tw-ring-color: rgb(var(--primary-500) / .35) !important;
+    }
+    .fi-simple-page > section .fi-checkbox-input {
+        background: #ffffff !important;
+        border-color: rgb(2 6 23 / .3) !important;
+    }
+    .fi-simple-page > section .fi-checkbox-input:checked {
+        background: rgb(var(--primary-600)) !important;
+        border-color: rgb(var(--primary-600)) !important;
+    }
+    .fi-simple-page > section a { color: rgb(var(--primary-600)) !important; }
+    .fi-simple-page > section .fi-btn.fi-color-primary,
+    .fi-simple-page > section .fi-btn[data-color="primary"] { color: #ffffff !important; }
+    .fi-simple-page > section .fi-btn.fi-color-gray {
+        background: #ffffff !important;
+        color: #334155 !important;
+        border-color: rgb(2 6 23 / .12) !important;
+    }
+
     @media (min-width: 1024px) {
         .auth-brand-panel {
             position: fixed !important;
