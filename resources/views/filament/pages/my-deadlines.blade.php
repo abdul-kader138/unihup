@@ -2,15 +2,15 @@
     @php($data = $this->getDeadlineData())
 
     @unless ($data['has_shortlist'])
-        <div class="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300">
-            Save programs in <a href="{{ \App\Filament\Pages\FindUniversities::getUrl() }}" class="text-primary-600 hover:underline dark:text-primary-400">Find Universities</a>
+        <x-ui.page-intro icon="heroicon-o-information-circle">
+            Save programs in <a href="{{ \App\Filament\Pages\FindUniversities::getUrl() }}" class="font-semibold text-primary-600 hover:underline dark:text-primary-400">Find Universities</a>
             to see the deadlines for those universities and their region's scholarships here. Nationwide deadlines are shown regardless.
-        </div>
+        </x-ui.page-intro>
     @endunless
 
     @if ($data['overdue']->isNotEmpty())
         <div>
-            <h2 class="mb-2 text-xs font-semibold uppercase tracking-wider text-danger-600 dark:text-danger-400">Passed</h2>
+            <div class="ui-eyebrow mb-2" style="color: rgb(var(--danger-600))">Passed</div>
             <div class="space-y-2">
                 @foreach ($data['overdue'] as $deadline)
                     @include('filament.pages.partials.deadline-row', ['deadline' => $deadline, 'past' => true])
@@ -20,12 +20,14 @@
     @endif
 
     <div>
-        <h2 class="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Upcoming</h2>
+        <div class="ui-eyebrow mb-2">Upcoming</div>
 
         @if ($data['upcoming']->isEmpty())
-            <div class="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500 dark:border-white/10 dark:bg-white/5">
-                No upcoming deadlines on file for your shortlist yet.
-            </div>
+            <x-ui.empty-state
+                icon="heroicon-o-calendar-days"
+                heading="No upcoming deadlines"
+                description="Nothing on file for your shortlist yet. Nationwide dates will appear here as staff add them."
+            />
         @else
             <div class="space-y-2">
                 @foreach ($data['upcoming'] as $deadline)

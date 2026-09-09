@@ -2,9 +2,8 @@
 @php($color = \App\Models\Deadline::CATEGORY_COLORS[$deadline->category] ?? 'gray')
 
 <div @class([
-    'flex flex-wrap items-start gap-3 rounded-xl border p-4',
-    'border-gray-200 bg-white dark:border-white/10 dark:bg-white/5' => ! $past,
-    'border-gray-200 bg-gray-50 opacity-70 dark:border-white/10 dark:bg-white/5' => $past,
+    'ui-card ui-card--pad flex flex-wrap items-start gap-3',
+    'opacity-70' => $past,
 ])>
     <div class="flex w-16 shrink-0 flex-col items-center rounded-lg bg-gray-100 py-1.5 text-center dark:bg-white/10">
         <span class="text-[0.65rem] font-semibold uppercase text-gray-500 dark:text-gray-400">{{ $deadline->due_at->format('M') }}</span>
@@ -27,7 +26,7 @@
             <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">{{ $deadline->description }}</p>
         @endif
         @if ($deadline->url)
-            <a href="{{ $deadline->url }}" target="_blank" rel="noopener" class="mt-1 inline-block text-xs font-medium text-primary-600 hover:underline dark:text-primary-400">Official page &rarr;</a>
+            <a href="{{ $deadline->url }}" target="_blank" rel="noopener" class="mt-1 inline-block text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400">Official page &rarr;</a>
         @endif
     </div>
 
@@ -35,11 +34,11 @@
         @if ($past)
             <span class="text-gray-400">{{ abs($days) }}d ago</span>
         @elseif ($days === 0)
-            <span class="font-semibold text-danger-600 dark:text-danger-400">Today</span>
+            <span class="rounded-full bg-danger-50 px-2 py-0.5 font-semibold text-danger-700 dark:bg-danger-400/10 dark:text-danger-400">Today</span>
         @elseif ($days <= 7)
-            <span class="font-semibold text-danger-600 dark:text-danger-400">in {{ $days }}d</span>
+            <span class="rounded-full bg-danger-50 px-2 py-0.5 font-semibold text-danger-700 dark:bg-danger-400/10 dark:text-danger-400">in {{ $days }}d</span>
         @elseif ($days <= 30)
-            <span class="font-medium text-warning-600 dark:text-warning-400">in {{ $days }}d</span>
+            <span class="rounded-full bg-warning-50 px-2 py-0.5 font-medium text-warning-700 dark:bg-warning-400/10 dark:text-warning-400">in {{ $days }}d</span>
         @else
             <span class="text-gray-500 dark:text-gray-400">in {{ $days }}d</span>
         @endif

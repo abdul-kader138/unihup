@@ -3,22 +3,22 @@
     @php($progress = $this->guideProgress())
 
     <div class="space-y-6">
-        <div class="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-gray-300">
+        <x-ui.page-intro icon="heroicon-o-pencil-square">
             Programs flagged <span class="font-medium">Restricted</span> admission generally require passing a standardized
             entrance test before you can enrol — which one depends on the subject area, not the university. This page
             explains the three tracks that cover almost every case.
             (Once you're admitted, non-EU applicants also need a separate visa process — see the
-            <a href="{{ route('filament.admin.pages.visa-arrival') }}" class="text-primary-600 hover:underline dark:text-primary-400">Visa &amp; Arrival guide</a>.)
-        </div>
+            <a href="{{ route('filament.admin.pages.visa-arrival') }}" class="font-semibold text-primary-600 hover:underline dark:text-primary-400">Visa &amp; Arrival guide</a>.)
+        </x-ui.page-intro>
 
         <x-guide-progress :progress="$progress" />
 
         @foreach ($this->getSections() as $section)
             @php($sk = $section['key'])
+            @php($done = $states[$sk] ?? false)
             <div @class([
-                'rounded-xl border p-4',
-                'border-gray-200 bg-white dark:border-white/10 dark:bg-white/5' => ! ($states[$sk] ?? false),
-                'border-success-200 bg-success-50/40 dark:border-success-400/20 dark:bg-success-400/5' => $states[$sk] ?? false,
+                'ui-card ui-card--pad',
+                'border-success-200 bg-success-50/40 dark:border-success-400/20 dark:bg-success-400/5' => $done,
             ])>
                 <div class="flex flex-wrap items-center gap-2">
                     <h2 class="text-base font-semibold">{{ $section['heading'] }}</h2>
@@ -28,7 +28,7 @@
                             Deadline-critical
                         </span>
                     @endif
-                    <x-guide-section-toggle :done="$states[$sk] ?? false" :section-key="$sk" />
+                    <x-guide-section-toggle :done="$done" :section-key="$sk" />
                 </div>
 
                 <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">{{ $section['body'] }}</p>
@@ -56,7 +56,7 @@
             </div>
         @endforeach
 
-        <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
+        <x-ui.card>
             <h2 class="text-base font-semibold">Official sources</h2>
             <ul class="mt-2 space-y-1">
                 @foreach ($this->getOfficialLinks() as $label => $url)
@@ -67,12 +67,12 @@
                     </li>
                 @endforeach
             </ul>
-        </div>
+        </x-ui.card>
 
-        <div class="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-500 dark:border-white/10 dark:bg-white/5 dark:text-gray-400">
+        <x-ui.card class="text-xs text-gray-500 dark:text-gray-400">
             General guidance, not a substitute for the specific admission notice (bando) of the program you're
             applying to — exact test dates, registration windows and pass thresholds are set annually by CISIA,
             the Ministry, or the individual university. Confirm current details on the official sources above.
-        </div>
+        </x-ui.card>
     </div>
 </x-filament-panels::page>

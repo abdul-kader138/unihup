@@ -1,23 +1,21 @@
 <x-filament-widgets::widget>
-    <x-filament::section>
-        <div class="flex items-center gap-4">
-            <img
-                src="{{ filament()->getUserAvatarUrl($this->getUser()) }}"
-                alt="{{ $this->getUser()?->name }}"
-                class="h-12 w-12 rounded-full object-cover"
-            />
-            <div>
-                <h2 class="text-lg font-semibold text-gray-950 dark:text-white">
-                    {{ $this->getGreeting() }}, {{ $this->getUser()?->name }}
-                </h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    @foreach ($this->getUser()?->roles->pluck('name') ?? [] as $role)
-                        <span class="fi-badge inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-primary-50 text-primary-700 dark:bg-primary-400/10 dark:text-primary-400">
-                            {{ str($role)->replace('_', ' ')->title() }}
-                        </span>
-                    @endforeach
-                </p>
+    <div class="ui-hero flex items-center gap-4">
+        <img
+            src="{{ filament()->getUserAvatarUrl($this->getUser()) }}"
+            alt="{{ $this->getUser()?->name }}"
+            class="h-14 w-14 rounded-full object-cover ring-2 ring-white/60 dark:ring-white/10"
+        />
+        <div>
+            <h2 class="text-lg font-semibold tracking-tight text-gray-950 dark:text-white">
+                {{ $this->getGreeting() }}, {{ $this->getUser()?->name }}
+            </h2>
+            <div class="mt-1 flex flex-wrap gap-1.5">
+                @foreach ($this->getUser()?->roles->pluck('name') ?? [] as $role)
+                    <span class="inline-flex items-center rounded-md bg-primary-500/10 px-2 py-0.5 text-xs font-medium text-primary-700 dark:text-primary-300">
+                        {{ str($role)->replace('_', ' ')->title() }}
+                    </span>
+                @endforeach
             </div>
         </div>
-    </x-filament::section>
+    </div>
 </x-filament-widgets::widget>

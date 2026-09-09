@@ -326,6 +326,87 @@ CSS,
     .fi-sidebar-item-button.fi-active .fi-sidebar-item-icon {
         color: rgb(var(--primary-500));
     }
+
+    /* ── Panel surface polish (refined / premium) ──────────────────────── */
+    .fi-main { --ui-gap: 1.5rem; }
+    .fi-section,
+    .fi-wi-stats-overview-stat,
+    .fi-ta-ctn,
+    .fi-fo-tabs {
+        box-shadow: 0 1px 2px rgb(2 6 23 / .04), 0 1px 3px rgb(2 6 23 / .04);
+        transition: box-shadow .18s ease, border-color .18s ease;
+    }
+    .fi-section:hover { box-shadow: 0 2px 6px rgb(2 6 23 / .06), 0 2px 10px rgb(2 6 23 / .05); }
+    .fi-ta-row { transition: background-color .12s ease; }
+    .fi-btn { transition: background-color .15s ease, box-shadow .15s ease, transform .05s ease; }
+    .fi-btn:active { transform: translateY(.5px); }
+
+    /* ── Shared UI kit (used by app/resources/views/components/ui/*) ───── */
+    .ui-card {
+        border-radius: .875rem;
+        border: 1px solid rgb(var(--gray-950) / .07);
+        background: #fff;
+        box-shadow: 0 1px 2px rgb(2 6 23 / .04);
+    }
+    .ui-card--pad { padding: 1.25rem; }
+    .ui-card--hover { transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+    .ui-card--hover:hover {
+        border-color: rgb(var(--primary-500) / .35);
+        box-shadow: 0 4px 14px rgb(2 6 23 / .07);
+        transform: translateY(-1px);
+    }
+    .ui-eyebrow {
+        font-size: .6875rem;
+        font-weight: 600;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: rgb(var(--gray-500));
+    }
+    .ui-stat-value { font-size: 1.75rem; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
+    .ui-progress { height: .5rem; border-radius: 9999px; background: rgb(var(--gray-950) / .08); overflow: hidden; }
+    .ui-progress__bar { height: 100%; border-radius: 9999px; background: rgb(var(--primary-500)); transition: width .4s cubic-bezier(.4,0,.2,1); }
+    .ui-empty { text-align: center; padding: 2.5rem 1.5rem; }
+    .ui-empty__icon {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 3rem; height: 3rem; border-radius: 9999px; margin-bottom: .75rem;
+        background: rgb(var(--primary-500) / .1); color: rgb(var(--primary-600));
+    }
+    .ui-hero {
+        position: relative;
+        border-radius: 1rem;
+        background: linear-gradient(135deg, rgb(var(--primary-500) / .16), rgb(var(--primary-500) / .04));
+        border: 1px solid rgb(var(--primary-500) / .22);
+        padding: 1.5rem 1.5rem 1.5rem 1.75rem;
+        overflow: hidden;
+    }
+    .ui-hero::before {
+        content: "";
+        position: absolute;
+        inset-inline-start: 0; top: 0; bottom: 0;
+        width: 4px;
+        background: rgb(var(--primary-500));
+    }
+
+    /* Responsive grids that don't depend on which Tailwind utilities were
+       compiled into the Filament theme build. */
+    .ui-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+    @media (min-width: 640px) {
+        .ui-grid--2, .ui-grid--3, .ui-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1024px) {
+        .ui-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .ui-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    :is(.dark) .ui-card { background: rgb(255 255 255 / .04); border-color: rgb(255 255 255 / .1); box-shadow: none; }
+    :is(.dark) .ui-card--hover:hover { border-color: rgb(var(--primary-400) / .4); box-shadow: 0 4px 14px rgb(0 0 0 / .3); }
+    :is(.dark) .ui-eyebrow { color: rgb(var(--gray-400)); }
+    :is(.dark) .ui-progress { background: rgb(255 255 255 / .1); }
+    :is(.dark) .ui-hero {
+        border-color: rgb(var(--primary-400) / .3);
+        background: linear-gradient(135deg, rgb(var(--primary-400) / .18), rgb(var(--primary-400) / .03));
+    }
+    :is(.dark) .ui-hero::before { background: rgb(var(--primary-400)); }
 </style>
 CSS;
 
