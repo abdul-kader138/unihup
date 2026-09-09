@@ -509,14 +509,13 @@ CSS,
         align-items: center;
         gap: .55rem;
         min-width: 0;
-        flex: 0 1 24rem;
-        max-width: 42vw;
+        flex: 1 1 auto;
+        max-width: none;
         margin-inline-end: .5rem;
         padding-inline-start: .125rem;
         user-select: none;
     }
     @media (min-width: 768px)  { .fi-topbar-tagline { display: flex; } }
-    @media (min-width: 1280px) { .fi-topbar-tagline { flex-basis: 34rem; max-width: 34rem; } }
 
     .fi-topbar-tagline__dot {
         flex: none;
@@ -524,7 +523,7 @@ CSS,
         height: .5rem;
         border-radius: 9999px;
         background: rgb(var(--primary-500));
-        box-shadow: 0 0 0 0 rgb(var(--primary-500) / .5);
+        box-shadow: 0 0 0 0 rgb(var(--primary-500) / .5), 0 0 .75rem rgb(var(--primary-500) / .35);
         animation: fi-topbar-tagline-pulse 2.4s ease-out infinite;
     }
 
@@ -534,8 +533,19 @@ CSS,
         flex: 1 1 auto;
         min-width: 0;
         overflow: hidden;
+        border-radius: 9999px;
         -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1.75rem, #000 calc(100% - 1.75rem), transparent 100%);
                 mask-image: linear-gradient(90deg, transparent 0, #000 1.75rem, #000 calc(100% - 1.75rem), transparent 100%);
+    }
+    .fi-topbar-tagline__viewport::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        width: 9rem;
+        pointer-events: none;
+        background: linear-gradient(100deg, transparent, rgb(var(--primary-400) / .12), transparent);
+        transform: translateX(-12rem) skewX(-18deg);
+        animation: fi-topbar-tagline-glint 7s ease-in-out infinite;
     }
     .fi-topbar-tagline__track {
         display: inline-flex;
@@ -543,7 +553,7 @@ CSS,
         gap: .9rem;
         white-space: nowrap;
         will-change: transform;
-        animation: fi-topbar-tagline-scroll 34s linear infinite;
+        animation: fi-topbar-tagline-scroll 38s linear infinite;
     }
     .fi-topbar-tagline:hover .fi-topbar-tagline__track,
     .fi-topbar-tagline:focus-within .fi-topbar-tagline__track {
@@ -571,9 +581,15 @@ CSS,
         70%  { box-shadow: 0 0 0 .5rem rgb(var(--primary-500) / 0); }
         100% { box-shadow: 0 0 0 0 rgb(var(--primary-500) / 0); }
     }
+    @keyframes fi-topbar-tagline-glint {
+        0%, 35% { opacity: 0; transform: translateX(-12rem) skewX(-18deg); }
+        55%, 75% { opacity: 1; }
+        100% { opacity: 0; transform: translateX(calc(100vw + 12rem)) skewX(-18deg); }
+    }
     @media (prefers-reduced-motion: reduce) {
         .fi-topbar-tagline__dot { animation: none; }
-        .fi-topbar-tagline__track { animation: none; transform: none; }
+        .fi-topbar-tagline__track,
+        .fi-topbar-tagline__viewport::after { animation: none; transform: none; }
     }
 
     :is(.dark) .fi-topbar-tagline__item { color: rgb(var(--gray-400)); }
