@@ -90,14 +90,13 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('15rem')
             ->navigationGroups([
-                NavigationGroup::make('My Journey')
-                    ->icon('heroicon-o-map'),
-                NavigationGroup::make('Guides')
-                    ->icon('heroicon-o-book-open'),
-                NavigationGroup::make('Universities')
-                    ->icon('heroicon-o-building-library'),
+                // No group icons — Filament suppresses per-item icons and shows a
+                // connector dot instead whenever a group has an icon. Plain-label
+                // groups let every nav item keep its own icon.
+                NavigationGroup::make('My Journey'),
+                NavigationGroup::make('Guides'),
+                NavigationGroup::make('Universities'),
                 NavigationGroup::make('Administration')
-                    ->icon('heroicon-o-cog-6-tooth')
                     ->collapsed(),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
@@ -343,41 +342,41 @@ CSS,
 
     .fi-sidebar-item-button {
         position: relative;
-        gap: .625rem;
+        gap: .6rem;
         padding: .5rem .625rem;
-        border-radius: .55rem;
+        border-radius: .5rem;
         font-size: .875rem;
         font-weight: 500;
         color: rgb(var(--gray-600));
         transition: background-color .14s ease, color .14s ease;
     }
     .fi-sidebar-item-button:hover {
-        background-color: rgb(var(--gray-950) / .05);
+        background-color: rgb(var(--gray-950) / .045);
         color: rgb(var(--gray-900));
     }
     .fi-sidebar-item-icon {
-        width: 1.2rem; height: 1.2rem;
+        width: 1.15rem; height: 1.15rem;
         color: rgb(var(--gray-400));
         transition: color .14s ease;
     }
-    .fi-sidebar-item-button:hover .fi-sidebar-item-icon { color: rgb(var(--gray-600)); }
+    .fi-sidebar-item-button:hover .fi-sidebar-item-icon { color: rgb(var(--gray-500)); }
 
     .fi-sidebar-item.fi-active > .fi-sidebar-item-button,
     .fi-sidebar-item-button.fi-active {
-        background-color: rgb(var(--primary-500) / .12);
+        background-color: rgb(var(--primary-500) / .11);
         color: rgb(var(--primary-700));
         font-weight: 600;
     }
-    .fi-sidebar-item.fi-active > .fi-sidebar-item-button::before,
-    .fi-sidebar-item-button.fi-active::before {
+    .fi-sidebar-item.fi-active > .fi-sidebar-item-button::after,
+    .fi-sidebar-item-button.fi-active::after {
         content: "";
         position: absolute;
-        inset-inline-start: -.35rem;
+        inset-inline-start: -.625rem;
         top: 50%;
         transform: translateY(-50%);
         width: 3px;
-        height: 1.35rem;
-        border-radius: 9999px;
+        height: 1.25rem;
+        border-radius: 0 3px 3px 0;
         background-color: rgb(var(--primary-500));
     }
     .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
