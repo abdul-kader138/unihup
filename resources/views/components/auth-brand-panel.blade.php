@@ -77,10 +77,23 @@
     .fi-simple-page > section :is(.fi-input-wrp, .fi-input) {
         background: #ffffff !important;
         color: #0f172a !important;
-        border-color: rgb(2 6 23 / .18) !important;
+    }
+    /* The email / password fields need a clearly visible outline. Filament's
+       default is a faint 10%-opacity ring (a box-shadow) that all but
+       disappears on the white card — give .fi-input-wrp a real 1px border
+       plus a soft shadow, and a brand-coloured ring on focus. */
+    .fi-simple-page > section .fi-input-wrp {
+        border: 1px solid rgb(2 6 23 / .22) !important;
+        border-radius: .5rem !important;
+        box-shadow: 0 1px 2px rgb(2 6 23 / .05) !important;
+        transition: border-color .15s ease, box-shadow .15s ease !important;
+    }
+    .fi-simple-page > section .fi-input-wrp:hover {
+        border-color: rgb(2 6 23 / .34) !important;
     }
     .fi-simple-page > section .fi-input-wrp:focus-within {
         border-color: rgb(var(--primary-500)) !important;
+        box-shadow: 0 0 0 3px rgb(var(--primary-500) / .18) !important;
         --tw-ring-color: rgb(var(--primary-500) / .35) !important;
     }
     .fi-simple-page > section .fi-checkbox-input {

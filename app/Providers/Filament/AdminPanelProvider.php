@@ -497,24 +497,26 @@ CSS,
     .fi-section:hover { box-shadow: 0 4px 12px rgb(var(--gray-950) / .08); }
     .fi-header-heading, .fi-section-header-heading, h1.fi-header-heading { letter-spacing: -.015em; }
 
-    /* ══ Topbar tagline — self-typing one-liner in the empty left stretch ══
-       Sits in the TOPBAR_START render hook. Muted so it never competes with
-       the page heading; a soft pulsing brand dot + a blinking caret give it
-       life. Hidden below md; the Alpine component swaps to a terser message
-       set between md and lg. */
+    /* ══ Topbar tagline — a smooth horizontal marquee in the empty left stretch ══
+       Sits in the TOPBAR_START render hook. The message track scrolls
+       continuously and seamlessly (the blade duplicates the list, so a
+       -50% shift lands exactly on the loop point); it eases to a stop on
+       hover. Edges fade via a mask so text slides in/out softly rather
+       than clipping. Muted so it never competes with the page heading.
+       Hidden below md. */
     .fi-topbar-tagline {
         display: none;
         align-items: center;
-        gap: .5rem;
+        gap: .55rem;
         min-width: 0;
+        flex: 0 1 24rem;
         max-width: 42vw;
         margin-inline-end: .5rem;
         padding-inline-start: .125rem;
         user-select: none;
-        pointer-events: none;
     }
     @media (min-width: 768px)  { .fi-topbar-tagline { display: flex; } }
-    @media (min-width: 1280px) { .fi-topbar-tagline { max-width: 34rem; } }
+    @media (min-width: 1280px) { .fi-topbar-tagline { flex-basis: 34rem; max-width: 34rem; } }
 
     .fi-topbar-tagline__dot {
         flex: none;
@@ -525,46 +527,58 @@ CSS,
         box-shadow: 0 0 0 0 rgb(var(--primary-500) / .5);
         animation: fi-topbar-tagline-pulse 2.4s ease-out infinite;
     }
-    .fi-topbar-tagline__text {
+
+    /* Masked viewport: the track scrolls inside this, fading at both edges. */
+    .fi-topbar-tagline__viewport {
+        position: relative;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 1.75rem, #000 calc(100% - 1.75rem), transparent 100%);
+                mask-image: linear-gradient(90deg, transparent 0, #000 1.75rem, #000 calc(100% - 1.75rem), transparent 100%);
+    }
+    .fi-topbar-tagline__track {
+        display: inline-flex;
+        align-items: center;
+        gap: .9rem;
+        white-space: nowrap;
+        will-change: transform;
+        animation: fi-topbar-tagline-scroll 34s linear infinite;
+    }
+    .fi-topbar-tagline:hover .fi-topbar-tagline__track,
+    .fi-topbar-tagline:focus-within .fi-topbar-tagline__track {
+        animation-play-state: paused;
+    }
+    .fi-topbar-tagline__item {
         font-size: .8125rem;
         font-weight: 500;
         line-height: 1;
         letter-spacing: -.005em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
         color: rgb(var(--gray-500));
     }
-    .fi-topbar-tagline__caret {
-        flex: none;
-        width: 2px;
-        height: .9rem;
-        margin-inline-start: -.15rem;
-        border-radius: 1px;
-        background: rgb(var(--primary-500));
-        animation: fi-topbar-tagline-blink 1.05s steps(1) infinite;
+    .fi-topbar-tagline__sep {
+        font-size: .5rem;
+        line-height: 1;
+        color: rgb(var(--primary-500) / .55);
     }
-    /* Hold the caret solid while characters are being typed, blink when idle. */
-    .fi-topbar-tagline.is-typing .fi-topbar-tagline__caret { animation: none; opacity: 1; }
 
+    @keyframes fi-topbar-tagline-scroll {
+        from { transform: translate3d(0, 0, 0); }
+        to   { transform: translate3d(-50%, 0, 0); }
+    }
     @keyframes fi-topbar-tagline-pulse {
         0%   { box-shadow: 0 0 0 0 rgb(var(--primary-500) / .45); }
         70%  { box-shadow: 0 0 0 .5rem rgb(var(--primary-500) / 0); }
         100% { box-shadow: 0 0 0 0 rgb(var(--primary-500) / 0); }
     }
-    @keyframes fi-topbar-tagline-blink {
-        0%, 49%   { opacity: 1; }
-        50%, 100% { opacity: 0; }
-    }
     @media (prefers-reduced-motion: reduce) {
         .fi-topbar-tagline__dot { animation: none; }
-        .fi-topbar-tagline__caret { display: none; }
-        .fi-topbar-tagline__text { transition: opacity .25s ease; }
+        .fi-topbar-tagline__track { animation: none; transform: none; }
     }
 
-    :is(.dark) .fi-topbar-tagline__text  { color: rgb(var(--gray-400)); }
-    :is(.dark) .fi-topbar-tagline__dot,
-    :is(.dark) .fi-topbar-tagline__caret { background: rgb(var(--primary-400)); }
+    :is(.dark) .fi-topbar-tagline__item { color: rgb(var(--gray-400)); }
+    :is(.dark) .fi-topbar-tagline__dot  { background: rgb(var(--primary-400)); }
+    :is(.dark) .fi-topbar-tagline__sep  { color: rgb(var(--primary-400) / .6); }
 
     /* A discreet Italian tricolore mark at the top of the sidebar. */
     .fi-sidebar { position: relative; }
