@@ -302,17 +302,18 @@ CSS,
 <style>
     .fi-theme-switcher { display: none !important; }
 
-    /* ══ Sidebar — a deep indigo-charcoal rail against the light content ══
-       Dark in BOTH panel modes: gives the UI real depth/colour instead of a
-       sea of white, and makes the logo + tricolore pop. */
+    /* ══ Sidebar — light, in the same surface family as the content ═════
+       Near-white with a crisp border so it reads as one cohesive UI, not a
+       dark rail bolted onto a light page. */
     .fi-sidebar,
     .fi-sidebar .fi-sidebar-header,
     .fi-sidebar .fi-sidebar-nav {
-        background: linear-gradient(180deg, #17162a, #131120) !important;
-        border-color: rgb(255 255 255 / .07) !important;
+        background: #fbfbfc !important;
     }
-    /* Pin the sidebar so its dark panel always fills the viewport, even on
-       long scrolling pages (Filament leaves it position: relative here). */
+    .fi-sidebar { border-inline-end: 1px solid rgb(var(--gray-950) / .08) !important; }
+    .fi-sidebar-header { border-color: rgb(var(--gray-950) / .07) !important; }
+    /* Pin the sidebar so it always fills the viewport height (Filament leaves
+       it position: relative here). */
     .fi-sidebar {
         position: sticky !important;
         top: 0;
@@ -321,11 +322,6 @@ CSS,
         overflow-y: auto;
         overflow-x: hidden;
     }
-    .fi-sidebar .fi-logo,
-    .fi-sidebar .fi-sidebar-header a,
-    .fi-sidebar .fi-sidebar-header span,
-    .fi-sidebar-header .fi-icon-btn { color: #fff !important; }
-    .fi-sidebar .fi-icon-btn:hover { background-color: rgb(255 255 255 / .08) !important; }
 
     .fi-sidebar-nav { gap: .1rem; padding: .625rem .625rem 1rem; }
     .fi-sidebar-group + .fi-sidebar-group { margin-top: 1rem; }
@@ -336,9 +332,8 @@ CSS,
         font-weight: 700;
         letter-spacing: .09em;
         text-transform: uppercase;
-        color: rgb(148 163 184);
+        color: rgb(var(--gray-400));
     }
-    .fi-sidebar-group-collapse-button { color: rgb(100 116 139) !important; }
 
     /* Filament draws a dot + connector line for iconless grouped items — hide
        it; items read as clean text links under their section header. */
@@ -353,24 +348,24 @@ CSS,
         border-radius: .55rem;
         font-size: .875rem;
         font-weight: 500;
-        color: rgb(203 213 225) !important;
+        color: rgb(var(--gray-600));
         transition: background-color .14s ease, color .14s ease;
     }
     .fi-sidebar-item-button:hover {
-        background-color: rgb(255 255 255 / .06) !important;
-        color: #ffffff !important;
+        background-color: rgb(var(--gray-950) / .05);
+        color: rgb(var(--gray-900));
     }
     .fi-sidebar-item-icon {
         width: 1.2rem; height: 1.2rem;
-        color: rgb(148 163 184) !important;
+        color: rgb(var(--gray-400));
         transition: color .14s ease;
     }
-    .fi-sidebar-item-button:hover .fi-sidebar-item-icon { color: rgb(226 232 240) !important; }
+    .fi-sidebar-item-button:hover .fi-sidebar-item-icon { color: rgb(var(--gray-600)); }
 
     .fi-sidebar-item.fi-active > .fi-sidebar-item-button,
     .fi-sidebar-item-button.fi-active {
-        background-color: rgb(var(--primary-400) / .2) !important;
-        color: #ffffff !important;
+        background-color: rgb(var(--primary-500) / .12);
+        color: rgb(var(--primary-700));
         font-weight: 600;
     }
     .fi-sidebar-item.fi-active > .fi-sidebar-item-button::before,
@@ -383,12 +378,24 @@ CSS,
         width: 3px;
         height: 1.35rem;
         border-radius: 9999px;
-        background-color: rgb(var(--primary-400));
+        background-color: rgb(var(--primary-500));
     }
     .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
     .fi-sidebar-item-button.fi-active .fi-sidebar-item-icon {
-        color: rgb(165 180 252) !important;
+        color: rgb(var(--primary-600));
     }
+
+    :is(.dark) .fi-sidebar,
+    :is(.dark) .fi-sidebar .fi-sidebar-header,
+    :is(.dark) .fi-sidebar .fi-sidebar-nav { background: #0f172a !important; }
+    :is(.dark) .fi-sidebar { border-inline-end-color: rgb(148 163 184 / .12) !important; }
+    :is(.dark) .fi-sidebar-item-button { color: rgb(var(--gray-300)); }
+    :is(.dark) .fi-sidebar-item-button:hover { background-color: rgb(255 255 255 / .05); color: #fff; }
+    :is(.dark) .fi-sidebar-item-icon { color: rgb(var(--gray-500)); }
+    :is(.dark) .fi-sidebar-item.fi-active > .fi-sidebar-item-button,
+    :is(.dark) .fi-sidebar-item-button.fi-active { background-color: rgb(var(--primary-400) / .16); color: rgb(var(--primary-200)); }
+    :is(.dark) .fi-sidebar-item.fi-active .fi-sidebar-item-icon,
+    :is(.dark) .fi-sidebar-item-button.fi-active .fi-sidebar-item-icon { color: rgb(var(--primary-300)); }
 
     /* ── Panel surface polish (refined / premium) ──────────────────────── */
     .fi-main { --ui-gap: 1.5rem; }
@@ -473,7 +480,7 @@ CSS,
     /* ══ Standard admin theme — structured neutral, single accent ═══════ */
 
     /* Light: a soft cool-grey canvas so the white cards sit forward */
-    .fi-body, .fi-main { background: #eceef3; }
+    .fi-body, .fi-main { background: #eef0f4; }
     .fi-topbar { background: #ffffff; border-color: rgb(var(--gray-950) / .09) !important; }
     .fi-section, .fi-ta-ctn, .fi-fo-tabs, .fi-wi-stats-overview-stat {
         border-color: rgb(var(--gray-950) / .1) !important;
@@ -487,7 +494,8 @@ CSS,
     .fi-sidebar::before {
         content: "";
         position: absolute; top: 0; left: 0; right: 0; height: 3px;
-        background: linear-gradient(90deg, #008C45 0 33.33%, #F4F5F0 33.33% 66.66%, #CD212A 66.66% 100%);
+        background: linear-gradient(90deg, #008C45 0 33.33%, #eef0ec 33.33% 66.66%, #CD212A 66.66% 100%);
+        box-shadow: 0 1px 0 rgb(2 6 23 / .05);
         z-index: 6;
     }
 
