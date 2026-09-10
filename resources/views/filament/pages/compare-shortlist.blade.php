@@ -19,7 +19,7 @@
         {{-- Chip tray: pick which saved programs sit in the table --}}
         <x-ui.card>
             <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <span class="ui-eyebrow">Choose which to compare</span>
+                <span class="ui-eyebrow">{{ __('ui.compare.choose') }}</span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">
                     {{ count($this->selected) }} of {{ $total }} selected · up to {{ \App\Filament\Pages\CompareShortlist::MAX_COLUMNS }}
                 </span>
@@ -71,7 +71,7 @@
                             : 'border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-white/15 dark:text-gray-300 dark:hover:bg-white/5' }}"
                 >
                     <x-heroicon-o-funnel class="h-4 w-4" />
-                    {{ $this->onlyDifferences ? 'Showing differences only' : 'Only show differences' }}
+                    {{ $this->onlyDifferences ? __('ui.compare.showing_differences') : __('ui.compare.only_differences') }}
                     @if ($this->onlyDifferences && $comparison['hidden_rows'] > 0)
                         <span class="rounded-full bg-primary-600 px-1.5 text-[10px] text-white">{{ $comparison['hidden_rows'] }} hidden</span>
                     @endif
@@ -79,7 +79,7 @@
 
                 <a href="{{ $this->getPdfUrl() }}" target="_blank" rel="noopener"
                    class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-white/15 dark:text-gray-300 dark:hover:bg-white/5">
-                    <x-heroicon-o-arrow-down-tray class="h-4 w-4" /> Download PDF
+                    <x-heroicon-o-arrow-down-tray class="h-4 w-4" /> {{ __('ui.compare.download_pdf') }}
                 </a>
             </div>
 
@@ -136,7 +136,7 @@
                                                 {{ $value['display'] }}
                                             @endif
                                             @if ($value['best'])
-                                                <span class="ml-1 inline-flex items-center rounded bg-success-600 px-1 text-[10px] font-semibold uppercase tracking-wide text-white">Best</span>
+                                                <span class="ml-1 inline-flex items-center rounded bg-success-600 px-1 text-[10px] font-semibold uppercase tracking-wide text-white">{{ __('ui.compare.best') }}</span>
                                             @endif
                                         </td>
                                     @endforeach

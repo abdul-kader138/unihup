@@ -10,6 +10,7 @@ use App\Filament\Auth\ResetPassword;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\MyJourney;
 use App\Http\Middleware\RedirectNonAdminsFromDashboard;
+use App\Http\Middleware\SetLocale;
 use App\Models\Setting;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Enums\ThemeMode;
@@ -17,6 +18,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Auth\PasswordReset\RequestPasswordReset;
 use Filament\Panel;
@@ -68,6 +70,7 @@ class AdminPanelProvider extends PanelProvider
             ->profile(EditProfile::class, isSimple: false)
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')
+            ->userMenuItems(self::localeMenuItems())
             ->brandName(fn () => Setting::get('app_name', 'UniHup'))
             ->brandLogo(fn () => self::resolveBrandLogoUrl())
             ->brandLogoHeight('2.5rem')
@@ -127,6 +130,7 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                SetLocale::class,
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),
@@ -750,5 +754,25 @@ CSS;
         }
 
         return $path ? Storage::disk('public')->url($path) : null;
+    }
+
+    /**
+     * One user-menu entry per supported locale (see App\Http\Middleware
+     * \SetLocale), each a link that sets ?lang= and returns to the current
+     * page. The active locale is disabled.
+     *
+     * @return array<int, MenuItem>
+     */
+    protected static function localeMenuItems(): array
+    {
+        $labels = ['en' => 'English', 'it' => 'Italiano'];
+
+        return collect(SetLocale::SUPPORTED)
+            ->map(fn (string $locale) => MenuItem::make()
+                ->label(fn () => $labels[$locale] ?? strtoupper($locale))
+                ->icon('heroicon-o-language')
+                ->url(fn () => request()->fullUrlWithQuery(['lang' => $locale]))
+                ->visible(fn () => app()->getLocale() !== $locale))
+            ->all();
     }
 }

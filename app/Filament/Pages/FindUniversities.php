@@ -19,6 +19,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -214,6 +215,53 @@ class FindUniversities extends Page implements HasTable
             ->emptyStateHeading('No matching programs yet')
             ->emptyStateDescription('Try clearing a filter above, or ask an admin to add more universities.')
             ->emptyStateIcon('heroicon-o-building-library');
+    }
+
+    /**
+     * Route the table's search box through Scout (DegreeProgram is
+     * Searchable) instead of the built-in per-column LIKEs, so a query like
+     * "milan cs english" matches across program + university + subject and,
+     * on Meilisearch/Typesense, tolerates typos. Falls back to Filament's
+     * default matching when Scout has no real engine configured.
+     */
+    protected function applyGlobalSearchToTableQuery(Builder $query): Builder
+    {
+        $term = trim((string) $this->getTableSearch());
+        $scoutReady = ! in_array(config('scout.driver'), [null, '', 'null'], true);
+
+        if ($term === '' || ! $scoutReady) {
+            // Fall back to Filament's per-column LIKE search (inlined — the
+            // trait method can't be reached via parent::).
+            return $this->applyColumnLikeSearch($query, $term);
+        }
+
+        return $query->whereIn(
+            $query->getModel()->getQualifiedKeyName(),
+            DegreeProgram::search($term)->keys()->all(),
+        );
+    }
+
+    private function applyColumnLikeSearch(Builder $query, string $term): Builder
+    {
+        if ($term === '') {
+            return $query;
+        }
+
+        foreach ($this->extractTableSearchWords($term) as $word) {
+            $query->where(function (Builder $query) use ($word) {
+                $isFirst = true;
+
+                foreach ($this->getTable()->getColumns() as $column) {
+                    if ($column->isHidden() || ! $column->isGloballySearchable()) {
+                        continue;
+                    }
+
+                    $column->applySearchConstraint($query, $word, $isFirst);
+                }
+            });
+        }
+
+        return $query;
     }
 
     /** @var array<int, true>|null program ids on the current user's list */
