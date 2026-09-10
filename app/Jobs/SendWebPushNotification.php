@@ -27,7 +27,9 @@ class SendWebPushNotification implements ShouldQueue
     public function __construct(
         public User $user,
         public array $payload,
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function handle(): void
     {

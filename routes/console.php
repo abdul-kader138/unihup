@@ -62,3 +62,11 @@ Schedule::command('unihup:check-links')
     ->weeklyOn(1, '04:30')
     ->name('link-check')
     ->withoutOverlapping(120);
+
+// Keep the activity_log table bounded — Spatie deletes rows older than
+// config('activitylog.clean_after_days'). LogsActivity is on User + Setting,
+// so this table grows on every profile/setting write.
+Schedule::command('activitylog:clean')
+    ->weeklyOn(1, '03:30')
+    ->name('activitylog-clean')
+    ->withoutOverlapping();

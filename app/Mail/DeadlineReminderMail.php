@@ -28,7 +28,9 @@ class DeadlineReminderMail extends Mailable implements ShouldQueue
         public User $user,
         public Collection $deadlines,
         public int $offsetDays,
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function envelope(): Envelope
     {

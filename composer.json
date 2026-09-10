@@ -14,10 +14,12 @@
         "laravel/framework": "^13.8",
         "laravel/reverb": "^1.11",
         "laravel/sanctum": "^4.3",
+        "laravel/scout": "^10.11",
         "laravel/socialite": "^5.30",
         "laravel/tinker": "^3.0",
         "minishlink/web-push": "^11.0",
         "pragmarx/google2fa-qrcode": "^4.0",
+        "sentry/sentry-laravel": "^4.15",
         "spatie/laravel-activitylog": "^5.0",
         "spatie/laravel-permission": "^6.25"
     },

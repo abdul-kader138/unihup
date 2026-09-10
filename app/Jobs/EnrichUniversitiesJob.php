@@ -24,7 +24,10 @@ class EnrichUniversitiesJob implements ShouldQueue
     public int $tries = 2;
 
     /** @param  list<string>  $only */
-    public function __construct(public readonly array $only) {}
+    public function __construct(public readonly array $only)
+    {
+        $this->onQueue('imports');
+    }
 
     public function handle(): void
     {

@@ -35,7 +35,10 @@ class ProcessInboundWhatsAppJob implements ShouldQueue
     /** Media message types we know how to download. */
     private const MEDIA_TYPES = ['image', 'document', 'audio', 'video', 'sticker'];
 
-    public function __construct(public readonly array $payload) {}
+    public function __construct(public readonly array $payload)
+    {
+        $this->onQueue('notifications');
+    }
 
     public function handle(WhatsAppClient $client): void
     {

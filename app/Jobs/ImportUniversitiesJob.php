@@ -28,7 +28,9 @@ class ImportUniversitiesJob implements ShouldQueue
     public function __construct(
         public readonly string $source,
         public readonly ?int $year = null,
-    ) {}
+    ) {
+        $this->onQueue('imports');
+    }
 
     public function handle(): void
     {

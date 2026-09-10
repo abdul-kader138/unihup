@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Laravel\Scout\Searchable;
 
 class DegreeProgram extends Model
 {
     use HasFactory;
+    use Searchable;
 
     protected $fillable = [
         'university_id',
@@ -74,5 +76,28 @@ class DegreeProgram extends Model
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
+    }
+
+    /**
+     * Flattened program + university + subject text for full-text search.
+     * The "collection" driver backs a smarter multi-column search than the
+     * old per-column LIKEs; point Scout at Meilisearch/Typesense in
+     * production for typo tolerance and faceting (see config/scout.php).
+     *
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray(): array
+    {
+        $this->loadMissing(['university', 'subject']);
+
+        return [
+            'name' => $this->name,
+            'language' => $this->language,
+            'degree_level' => $this->degree_level,
+            'admission_type' => $this->admission_type,
+            'university_name' => $this->university?->display_name,
+            'university_city' => $this->university?->city,
+            'subject_name' => $this->subject?->display_name,
+        ];
     }
 }

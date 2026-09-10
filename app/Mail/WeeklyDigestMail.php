@@ -28,7 +28,9 @@ class WeeklyDigestMail extends Mailable implements ShouldQueue
     public function __construct(
         public User $user,
         public array $data,
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function envelope(): Envelope
     {

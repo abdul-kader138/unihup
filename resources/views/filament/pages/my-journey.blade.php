@@ -145,9 +145,11 @@
                                 <button
                                     type="button"
                                     wire:click="toggleStep('{{ $step['key'] }}')"
-                                    aria-label="Toggle step: {{ $step['title'] }}"
+                                    role="checkbox"
+                                    aria-checked="{{ $step['done'] ? 'true' : 'false' }}"
+                                    aria-label="{{ $step['title'] }}"
                                     @class([
-                                        'mt-0.5 flex h-[1.15rem] w-[1.15rem] shrink-0 items-center justify-center rounded-full border transition',
+                                        'mt-0.5 flex h-[1.15rem] w-[1.15rem] shrink-0 items-center justify-center rounded-full border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1',
                                         'border-gray-300 hover:border-primary-400 dark:border-white/20' => ! $step['done'],
                                         'border-success-500 bg-success-500 text-white' => $step['done'],
                                     ])

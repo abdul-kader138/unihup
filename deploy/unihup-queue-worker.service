@@ -16,7 +16,9 @@ WorkingDirectory=/var/www/unihup
 # --max-time recycles the worker periodically so it always picks up a fresh
 # deploy's code (a long-lived worker process keeps the old code in memory
 # otherwise); systemd's Restart=always brings it straight back up.
-ExecStart=/usr/bin/php /var/www/unihup/artisan queue:work --tries=3 --max-time=3600
+# Priority order: user-facing mail/WhatsApp/push first, then default, then
+# batch catalog imports last (queue names set on the job classes).
+ExecStart=/usr/bin/php /var/www/unihup/artisan queue:work --queue=notifications,default,imports --tries=3 --max-time=3600
 Restart=always
 RestartSec=5
 

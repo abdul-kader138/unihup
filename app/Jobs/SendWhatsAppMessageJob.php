@@ -32,7 +32,9 @@ class SendWhatsAppMessageJob implements ShouldQueue
         public readonly WhatsAppMessage $message,
         public readonly ?string $templateName = null,
         public readonly string $templateLanguage = 'en',
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function handle(WhatsAppClient $client): void
     {
