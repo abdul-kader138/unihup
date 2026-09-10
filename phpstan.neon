@@ -1,0 +1,15 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 5
+
+    paths:
+        - app
+
+    checkOctaneCompatibility: false
+
+    # First run on a codebase that predates static analysis, so the CI job is
+    # non-blocking for now (see .github/workflows/ci.yml). Most current
+    # findings are missing relation `@return` generics and Carbon-cast PHPDoc.
+    # Clear them, then drop `continue-on-error` from the workflow.

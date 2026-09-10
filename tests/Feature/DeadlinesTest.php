@@ -11,6 +11,7 @@ use App\Models\University;
 use App\Models\User;
 use Database\Seeders\ShieldSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -147,5 +148,47 @@ class DeadlinesTest extends TestCase
         $response->assertSee('BEGIN:VCALENDAR', false);
         $response->assertSee('Shown deadline', false);
         $response->assertDontSee('Hidden deadline', false);
+    }
+
+    public function test_relevant_to_accepts_a_preloaded_shortlist(): void
+    {
+        $user = $this->student();
+        $program = $this->program($this->university());
+        ShortlistItem::create(['user_id' => $user->id, 'degree_program_id' => $program->id, 'status' => 'researching']);
+        $deadline = $this->deadline([
+            'scope_type' => Deadline::SCOPE_PROGRAM,
+            'scope_id' => $program->id,
+            'title' => 'Program deadline',
+        ]);
+
+        $preloaded = $user->shortlistItems()->with('degreeProgram')->get();
+
+        $this->assertContains(
+            $deadline->id,
+            Deadline::relevantTo($user, shortlistItems: $preloaded)->pluck('id'),
+        );
+    }
+
+    public function test_scope_names_are_resolved_without_a_query_per_row(): void
+    {
+        $user = $this->student();
+        $university = $this->university();
+
+        foreach (range(1, 4) as $i) {
+            $this->deadline([
+                'scope_type' => Deadline::SCOPE_UNIVERSITY,
+                'scope_id' => $university->id,
+                'title' => "Uni deadline {$i}",
+            ]);
+        }
+
+        $deadlines = Deadline::relevantTo($user); // warms the scope-name cache
+
+        DB::enableQueryLog();
+        $names = $deadlines->map(fn (Deadline $d) => $d->scopeName());
+        DB::disableQueryLog();
+
+        $this->assertTrue($names->every(fn (string $n) => $n === $university->display_name));
+        $this->assertCount(0, DB::getQueryLog());
     }
 }

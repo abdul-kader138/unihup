@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\User;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Cache;
 
 class UserRegistrationsChart extends ChartWidget
 {
@@ -16,6 +17,14 @@ class UserRegistrationsChart extends ChartWidget
     protected function getData(): array
     {
         $days = 14;
+        $since = now()->subDays($days - 1)->startOfDay();
+
+        // One grouped query instead of 14 COUNT()s in a loop.
+        $counts = Cache::remember('admin.stats.registrations-14d', now()->addMinutes(10), fn () => User::query()
+            ->where('created_at', '>=', $since)
+            ->get(['created_at'])
+            ->countBy(fn (User $u) => $u->created_at->format('Y-m-d')));
+
         $labels = [];
         $registrations = [];
 
@@ -23,9 +32,7 @@ class UserRegistrationsChart extends ChartWidget
             $date = now()->subDays($offset)->startOfDay();
 
             $labels[] = $date->format('d M');
-            $registrations[] = User::query()
-                ->whereBetween('created_at', [$date, $date->copy()->endOfDay()])
-                ->count();
+            $registrations[] = $counts[$date->format('Y-m-d')] ?? 0;
         }
 
         return [

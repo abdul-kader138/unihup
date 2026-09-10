@@ -12,6 +12,7 @@ use App\Policies\ActivityPolicy;
 use App\Services\WhatsApp\WhatsAppClient;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginResponseContract;
 use Filament\Http\Responses\Auth\Contracts\RegistrationResponse as RegistrationResponseContract;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event;
@@ -43,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Surface N+1s in local/CI as an exception; stay lenient in prod.
+        Model::preventLazyLoading(! $this->app->isProduction());
+
         $this->applyMailSettings();
         $this->applyGoogleOAuthSettings();
 

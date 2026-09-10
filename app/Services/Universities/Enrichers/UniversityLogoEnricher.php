@@ -40,6 +40,7 @@ class UniversityLogoEnricher implements DataEnricher
                     $reason = $this->fetchAndStore($university);
                     if ($reason === null) {
                         $updated++;
+
                         continue;
                     }
 

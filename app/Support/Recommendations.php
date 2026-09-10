@@ -32,9 +32,11 @@ final class Recommendations
     /**
      * @return array<int, array{key: string, icon: string, title: string, description: string, url: string, cta: string}>
      */
-    public static function for(User $user): array
+    public static function for(User $user, ?Collection $shortlistItems = null): array
     {
-        $items = $user->shortlistItems()->with('degreeProgram')->get();
+        $items = $shortlistItems ?? $user->shortlistItems()
+            ->with(['degreeProgram.university', 'degreeProgram.subject'])
+            ->get();
         $programs = $items->pluck('degreeProgram')->filter();
 
         $out = [];

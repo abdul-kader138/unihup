@@ -11,6 +11,7 @@ use App\Models\University;
 use App\Models\User;
 use Database\Seeders\ShieldSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -62,10 +63,10 @@ class StudentJourneyPagesTest extends TestCase
         $this->actingAs($user)->get('/compare')->assertOk();
     }
 
-    public function test_compare_caps_at_four_programs(): void
+    public function test_compare_caps_at_the_column_limit(): void
     {
         $user = $this->student();
-        $programs = $this->programs(6);
+        $programs = $this->programs(CompareShortlist::MAX_COLUMNS + 2);
 
         foreach ($programs as $program) {
             ShortlistItem::create(['user_id' => $user->id, 'degree_program_id' => $program->id, 'status' => 'researching']);
@@ -73,7 +74,7 @@ class StudentJourneyPagesTest extends TestCase
 
         $shown = Livewire::actingAs($user)->test(CompareShortlist::class)->instance()->getPrograms();
 
-        $this->assertCount(4, $shown);
+        $this->assertCount(CompareShortlist::MAX_COLUMNS, $shown);
     }
 
     public function test_journey_summary_counts_the_students_own_data(): void
@@ -96,5 +97,24 @@ class StudentJourneyPagesTest extends TestCase
         $keys = collect($component->instance()->getChecklist())
             ->flatMap(fn ($phase) => collect($phase['steps'])->pluck('key'));
         $this->assertContains('register_admission_test', $keys);
+    }
+
+    public function test_my_journey_render_keeps_its_query_count_bounded(): void
+    {
+        $user = $this->student();
+
+        foreach ($this->programs(6) as $program) {
+            ShortlistItem::create(['user_id' => $user->id, 'degree_program_id' => $program->id, 'status' => 'researching']);
+        }
+
+        DB::enableQueryLog();
+        $this->actingAs($user)->get('/my-journey')->assertOk();
+        $count = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        // The five sections used to reload the shortlist independently. This
+        // is a regression fence, not a tuned target — well above the ~25 a
+        // consolidated render issues, well below the 50+ from before.
+        $this->assertLessThan(40, $count, "My Journey issued {$count} queries");
     }
 }

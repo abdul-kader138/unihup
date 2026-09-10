@@ -39,6 +39,27 @@ class MyJourney extends Page
 
     protected static string $view = 'filament.pages.my-journey';
 
+    /** @var Collection<int, ShortlistItem>|null per-request memo */
+    protected ?Collection $shortlistCache = null;
+
+    /** @var array<int, mixed>|null per-request memo of the built checklist */
+    protected ?array $checklistCache = null;
+
+    /**
+     * The signed-in student's shortlist, loaded once with every relation the
+     * five sections of this page need. Before this, My Journey reloaded the
+     * shortlist 4–5 times per render (checklist, summary, recommendations,
+     * deadlines).
+     *
+     * @return Collection<int, ShortlistItem>
+     */
+    protected function shortlist(): Collection
+    {
+        return $this->shortlistCache ??= auth()->user()->shortlistItems()
+            ->with(['degreeProgram.university', 'degreeProgram.subject'])
+            ->get();
+    }
+
     /**
      * Toggle a checklist step done / pending for the current user.
      */
@@ -97,7 +118,7 @@ class MyJourney extends Page
      */
     public function getRecommendations(): array
     {
-        return Recommendations::for(auth()->user());
+        return Recommendations::for(auth()->user(), $this->shortlist());
     }
 
     /**
@@ -107,7 +128,7 @@ class MyJourney extends Page
      */
     public function getUpcomingDeadlines(): Collection
     {
-        return Deadline::relevantTo(auth()->user(), upcomingOnly: true)->take(3);
+        return Deadline::relevantTo(auth()->user(), upcomingOnly: true, shortlistItems: $this->shortlist())->take(3);
     }
 
     /**
@@ -145,10 +166,12 @@ class MyJourney extends Page
      */
     public function getChecklist(): array
     {
+        if ($this->checklistCache !== null) {
+            return $this->checklistCache;
+        }
+
         $user = auth()->user();
-        $programs = $user->shortlistItems()
-            ->with('degreeProgram:id,admission_type,language')
-            ->get()
+        $programs = $this->shortlist()
             ->pluck('degreeProgram')
             ->filter();
 
@@ -193,7 +216,7 @@ class MyJourney extends Page
             }
         }
 
-        return $grouped;
+        return $this->checklistCache = $grouped;
     }
 
     /**
@@ -233,7 +256,7 @@ class MyJourney extends Page
     {
         $user = auth()->user();
 
-        $items = $user->shortlistItems()->get();
+        $items = $this->shortlist();
         $documents = $user->studentDocuments()->get();
 
         $statusCounts = [];
