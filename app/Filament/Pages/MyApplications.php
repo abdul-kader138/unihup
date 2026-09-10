@@ -315,6 +315,12 @@ class MyApplications extends Page implements HasTable
     protected function getHeaderActions(): array
     {
         return [
+            HeaderAction::make('board')
+                ->label('Board view')
+                ->icon('heroicon-o-view-columns')
+                ->color('gray')
+                ->url(MyApplicationsBoard::getUrl()),
+
             HeaderAction::make('compare')
                 ->label('Compare my list')
                 ->icon('heroicon-o-table-cells')

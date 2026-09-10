@@ -158,4 +158,21 @@ class FindUniversitiesTest extends TestCase
 
         Livewire::test(ListUniversities::class)->assertOk();
     }
+
+    public function test_admin_university_list_search_runs_through_scout(): void
+    {
+        config(['scout.driver' => 'collection']);
+
+        $match = University::create(['name' => 'Politecnico di Torino', 'slug' => 'polito', 'city' => 'Turin']);
+        $noMatch = University::create(['name' => 'Universita di Bari', 'slug' => 'uniba', 'city' => 'Bari']);
+
+        $admin = User::factory()->create();
+        $admin->assignRole('super_admin');
+
+        Livewire::actingAs($admin)
+            ->test(ListUniversities::class)
+            ->set('tableSearch', 'turin')
+            ->assertCanSeeTableRecords([$match])
+            ->assertCanNotSeeTableRecords([$noMatch]);
+    }
 }

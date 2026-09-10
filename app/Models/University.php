@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Scout\Searchable;
 
 class University extends Model
 {
     use HasFactory;
+    use Searchable;
 
     protected $fillable = ['name', 'canonical_name', 'slug', 'city', 'region', 'website_url', 'description', 'logo'];
 
@@ -24,6 +26,21 @@ class University extends Model
     public function getDisplayNameAttribute(): string
     {
         return $this->canonical_name ?: $this->name;
+    }
+
+    /**
+     * Name (both forms) + place, for Scout-backed admin search.
+     *
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'name' => $this->name,
+            'canonical_name' => $this->canonical_name,
+            'city' => $this->city,
+            'region' => $this->region,
+        ];
     }
 
     public function degreePrograms(): HasMany

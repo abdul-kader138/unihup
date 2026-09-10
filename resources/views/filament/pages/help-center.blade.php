@@ -26,10 +26,12 @@
                 type="search"
                 wire:model.live.debounce.400ms="search"
                 placeholder="Search the Help Center…"
+                aria-label="Search the Help Center"
                 class="w-full max-w-md rounded-lg border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5"
             />
             <select
                 wire:model.live="category"
+                aria-label="Filter answers by topic"
                 class="rounded-lg border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5"
             >
                 <option value="">All topics</option>
@@ -38,7 +40,7 @@
                 @endforeach
             </select>
             @if ($search !== '' || $category)
-                <button type="button" wire:click="clearFilters" class="text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400">Clear</button>
+                <button type="button" wire:click="clearFilters" class="rounded text-xs font-semibold text-primary-600 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-400">Clear</button>
             @endif
         </div>
     </x-ui.card>
@@ -57,9 +59,9 @@
                     <div class="space-y-2">
                         @foreach ($entries as $entry)
                             <details class="faq ui-card" style="padding:0">
-                                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-medium">
+                                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg p-4 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500">
                                     <span>{{ $entry->question }}</span>
-                                    <x-heroicon-o-chevron-down class="faq-chevron h-4 w-4 shrink-0 text-gray-400 transition" />
+                                    <x-heroicon-o-chevron-down aria-hidden="true" class="faq-chevron h-4 w-4 shrink-0 text-gray-400 transition" />
                                 </summary>
                                 <div class="faq-answer border-t border-gray-100 p-4 text-gray-600 dark:border-white/5 dark:text-gray-300">
                                     {!! $entry->answerHtml() !!}

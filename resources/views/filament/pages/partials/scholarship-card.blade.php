@@ -24,9 +24,10 @@
             <button
                 type="button"
                 wire:click="track('{{ $s['kind'] }}', @js($s['ref']), @js($s['label']))"
-                class="inline-flex items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-primary-500"
+                aria-label="Track {{ $s['label'] }}"
+                class="inline-flex items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-primary-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
             >
-                <x-heroicon-o-plus class="h-3.5 w-3.5" /> Track
+                <x-heroicon-o-plus aria-hidden="true" class="h-3.5 w-3.5" /> Track
             </button>
         @endif
 

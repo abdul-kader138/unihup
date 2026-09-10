@@ -35,10 +35,11 @@
         </div>
 
         {{-- Messages --}}
-        <div class="flex flex-1 flex-col gap-2 overflow-y-auto bg-gray-50 px-4 py-4 dark:bg-gray-950">
+        <div role="log" aria-live="polite" aria-label="Conversation"
+             class="flex flex-1 flex-col gap-2 overflow-y-auto bg-gray-50 px-4 py-4 dark:bg-gray-950">
             @if ($this->hasMoreMessages)
                 <button type="button" wire:click="loadEarlierMessages"
-                    class="mx-auto mb-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-white/10 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10">
+                    class="mx-auto mb-1 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-white/10 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10">
                     Load earlier messages
                 </button>
             @endif
@@ -63,10 +64,12 @@
 
                         @if ($message->media_path)
                             @if (str_starts_with((string) $message->media_mime, 'image/'))
-                                <img src="{{ route('whatsapp.media', $message) }}" alt="attachment" class="mb-1 max-h-64 rounded-lg" />
+                                <img src="{{ route('whatsapp.media', $message) }}" alt="Image attachment{{ $out ? ' from support' : '' }}" class="mb-1 max-h-64 rounded-lg" />
                             @else
-                                <a href="{{ route('whatsapp.media', $message) }}" target="_blank" class="mb-1 flex items-center gap-1 underline">
-                                    <x-heroicon-o-paper-clip class="h-4 w-4" /> {{ $message->media_mime ?: 'attachment' }}
+                                <a href="{{ route('whatsapp.media', $message) }}" target="_blank" rel="noopener"
+                                   aria-label="Open attachment ({{ $message->media_mime ?: 'file' }}) in a new tab"
+                                   class="mb-1 flex items-center gap-1 rounded underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70">
+                                    <x-heroicon-o-paper-clip aria-hidden="true" class="h-4 w-4" /> {{ $message->media_mime ?: 'attachment' }}
                                 </a>
                             @endif
                         @endif
@@ -94,6 +97,7 @@
                     wire:model="draft"
                     rows="2"
                     placeholder="Type a message…"
+                    aria-label="Type a message to the support team"
                     x-on:keydown.enter.prevent="$wire.send()"
                     class="flex-1 resize-none rounded-lg border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-white/10 dark:bg-white/5"
                 ></textarea>

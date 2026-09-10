@@ -8,9 +8,9 @@
         <div class="space-y-3">
             @foreach ($guides as $guide)
                 <details class="ui-card group" style="padding:0" @if ($open === $guide->slug) open @endif>
-                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-4 text-sm font-semibold">
+                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg p-4 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500">
                         <span>{{ $guide->city }}@if ($guide->region)<span class="ml-2 text-xs font-normal text-gray-400">{{ $guide->region }}</span>@endif</span>
-                        <x-heroicon-o-chevron-down class="h-4 w-4 shrink-0 text-gray-400 transition group-open:rotate-180" />
+                        <x-heroicon-o-chevron-down aria-hidden="true" class="h-4 w-4 shrink-0 text-gray-400 transition group-open:rotate-180" />
                     </summary>
 
                     <div class="space-y-4 border-t border-gray-100 p-4 dark:border-white/5">
