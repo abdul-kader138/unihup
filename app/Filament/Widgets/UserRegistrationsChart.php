@@ -19,11 +19,14 @@ class UserRegistrationsChart extends ChartWidget
         $days = 14;
         $since = now()->subDays($days - 1)->startOfDay();
 
-        // One grouped query instead of 14 COUNT()s in a loop.
+        // One grouped query instead of 14 COUNT()s in a loop. Cache a plain
+        // array, not a Collection — config('cache.serializable_classes') is
+        // false, so a cached object returns as __PHP_Incomplete_Class.
         $counts = Cache::remember('admin.stats.registrations-14d', now()->addMinutes(10), fn () => User::query()
             ->where('created_at', '>=', $since)
             ->get(['created_at'])
-            ->countBy(fn (User $u) => $u->created_at->format('Y-m-d')));
+            ->countBy(fn (User $u) => $u->created_at->format('Y-m-d'))
+            ->all());
 
         $labels = [];
         $registrations = [];

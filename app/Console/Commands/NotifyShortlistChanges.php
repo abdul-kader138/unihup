@@ -31,9 +31,14 @@ class NotifyShortlistChanges extends Command
 
     public function handle(): int
     {
+        // The marker is stored as an ISO string, not a Carbon instance —
+        // config('cache.serializable_classes') is false, so cached objects
+        // come back as __PHP_Incomplete_Class.
+        $stored = Cache::get(self::MARKER);
+
         $since = $this->option('since')
             ? now()->parse($this->option('since'))
-            : Cache::get(self::MARKER, now()->subDay());
+            : ($stored ? now()->parse($stored) : now()->subDay());
 
         $dryRun = (bool) $this->option('dry-run');
         $runAt = now();
@@ -72,7 +77,7 @@ class NotifyShortlistChanges extends Command
         }
 
         if (! $dryRun) {
-            Cache::forever(self::MARKER, $runAt);
+            Cache::forever(self::MARKER, $runAt->toIso8601String());
         }
 
         $this->info("{$notified} student(s) notified.");
