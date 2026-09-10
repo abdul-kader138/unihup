@@ -95,6 +95,11 @@ class DegreeProgram extends Model
             'language' => $this->language,
             'degree_level' => $this->degree_level,
             'admission_type' => $this->admission_type,
+            // Foreign keys carried so the Find Universities filters can be
+            // faceted (counts per university/subject) straight from the
+            // engine — see FindUniversities::facetCounts().
+            'university_id' => $this->university_id,
+            'subject_id' => $this->subject_id,
             'university_name' => $this->university?->display_name,
             'university_city' => $this->university?->city,
             'subject_name' => $this->subject?->display_name,

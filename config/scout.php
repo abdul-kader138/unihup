@@ -156,13 +156,26 @@ return [
                     'subject_name',
                     'university_city',
                 ],
+                // university_id/subject_id are indexed purely so the Find
+                // Universities page can pull facet counts per filter option
+                // (App\Filament\Pages\FindUniversities::facetCounts) — they're
+                // never used for free-text relevance.
                 'filterableAttributes' => [
+                    'university_id',
+                    'subject_id',
                     'degree_level',
                     'admission_type',
                     'language',
                 ],
                 'sortableAttributes' => [
                     'name',
+                ],
+                // The default cap is 100 distinct values per facet, which
+                // would silently truncate the university (91) and subject
+                // lists once both are faceted; lift it above the catalogue
+                // size so every option gets a real count.
+                'faceting' => [
+                    'maxValuesPerFacet' => 500,
                 ],
             ],
 

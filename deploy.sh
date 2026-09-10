@@ -110,14 +110,21 @@ fi
 "$PHP_BIN" artisan storage:link
 
 # Push Scout index settings (searchable/filterable/sortable attributes from
-# config/scout.php) to the search engine so they never drift from the code.
+# config/scout.php) to the search engine so they never drift from the code,
+# then rebuild the indexes so they never drift from the database either.
 # No-op unless SCOUT_DRIVER is a real engine; a search outage must not fail
-# the deploy, hence `|| true`. This is the ONLY Scout step that runs every
-# deploy — `scout:import` is a full index rebuild and is deliberately left
-# manual (run it once when switching engines, or after a toSearchableArray
-# change).
+# the deploy, hence `|| true`.
+#
+# scout:import upserts by primary key (no drop/recreate), so it's safe to
+# repeat every deploy and never leaves an index empty mid-run. Only the two
+# Searchable models, ~6k rows total today. If the catalogue grows large
+# enough that a full reindex per deploy drags, make this conditional (only
+# when toSearchableArray/settings changed) or move it to a one-off release
+# job.
 if ! grep -qE '^SCOUT_DRIVER=(null|collection|database)?$' .env 2>/dev/null; then
     "$PHP_BIN" artisan scout:sync-index-settings || true
+    "$PHP_BIN" artisan scout:import "App\\Models\\University" || true
+    "$PHP_BIN" artisan scout:import "App\\Models\\DegreeProgram" || true
 fi
 
 # Refresh Horizon's published dashboard assets (public/vendor/horizon) after a

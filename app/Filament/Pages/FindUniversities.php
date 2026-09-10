@@ -72,33 +72,39 @@ class FindUniversities extends Page implements HasTable
             ->filters([
                 SelectFilter::make('university_id')
                     ->label('University')
-                    ->options(fn () => Cache::remember('find-universities:university-options', 60, fn () => University::query()
-                        ->orderByRaw('COALESCE(canonical_name, name)')
-                        ->get(['id', 'name', 'canonical_name'])
-                        ->mapWithKeys(fn ($university) => [$university->id => $university->display_name])
-                        ->all()))
+                    ->options(fn () => $this->decorateWithCounts(
+                        Cache::remember('find-universities:university-options', 60, fn () => University::query()
+                            ->orderByRaw('COALESCE(canonical_name, name)')
+                            ->get(['id', 'name', 'canonical_name'])
+                            ->mapWithKeys(fn ($university) => [$university->id => $university->display_name])
+                            ->all()),
+                        'university_id',
+                    ))
                     ->searchable()
                     ->preload(),
 
                 SelectFilter::make('subject_id')
                     ->label('Subject')
-                    ->options(fn () => Cache::remember('find-universities:subject-options', 60, fn () => Subject::query()
-                        ->orderByRaw('COALESCE(canonical_name, name)')
-                        ->get(['id', 'name', 'canonical_name'])
-                        ->mapWithKeys(fn ($subject) => [$subject->id => $subject->display_name])
-                        ->all()))
+                    ->options(fn () => $this->decorateWithCounts(
+                        Cache::remember('find-universities:subject-options', 60, fn () => Subject::query()
+                            ->orderByRaw('COALESCE(canonical_name, name)')
+                            ->get(['id', 'name', 'canonical_name'])
+                            ->mapWithKeys(fn ($subject) => [$subject->id => $subject->display_name])
+                            ->all()),
+                        'subject_id',
+                    ))
                     ->searchable()
                     ->preload()
                     ->default(fn () => auth()->user()->preferred_subject_id),
 
                 SelectFilter::make('degree_level')
                     ->label('Degree level')
-                    ->options(DegreeProgram::DEGREE_LEVELS)
+                    ->options(fn () => $this->decorateWithCounts(DegreeProgram::DEGREE_LEVELS, 'degree_level'))
                     ->default(fn () => auth()->user()->preferred_degree_level),
 
                 SelectFilter::make('admission_type')
                     ->label('Admission')
-                    ->options(DegreeProgram::ADMISSION_TYPES),
+                    ->options(fn () => $this->decorateWithCounts(DegreeProgram::ADMISSION_TYPES, 'admission_type')),
             ], layout: FiltersLayout::AboveContent)
             ->filtersFormColumns(4)
             ->contentGrid([
@@ -226,6 +232,106 @@ class FindUniversities extends Page implements HasTable
     protected function scoutModel(): string
     {
         return DegreeProgram::class;
+    }
+
+    /** @var array<string, array<string, int>>|null field => [facet value => match count] */
+    protected ?array $facetCache = null;
+
+    /** The filter fields that carry a live match count next to each option. */
+    private const FACETED_FILTERS = ['university_id', 'subject_id', 'degree_level', 'admission_type'];
+
+    /**
+     * One Meilisearch facet query per faceted filter, each scoped to the
+     * current search term plus every *other* active filter — so the number
+     * beside an option is what picking it would actually narrow the results
+     * to. Runs once per Livewire request (memoised) and costs one hits-less
+     * engine call per field.
+     *
+     * Returns an empty array — meaning "don't decorate" — when Scout has no
+     * real engine (the LIKE-search fallback in ScoutTableSearch can't
+     * produce facets) or when the engine call fails; a search hiccup must
+     * not take the page down over a cosmetic count.
+     *
+     * @return array<string, array<string, int>>
+     */
+    protected function facetCounts(): array
+    {
+        if ($this->facetCache !== null) {
+            return $this->facetCache;
+        }
+
+        if (in_array(config('scout.driver'), [null, '', 'null'], true)) {
+            return $this->facetCache = [];
+        }
+
+        $term = trim((string) $this->getTableSearch());
+        $active = $this->tableFilters ?? [];
+
+        try {
+            $counts = [];
+
+            foreach (self::FACETED_FILTERS as $field) {
+                $filter = [];
+
+                foreach (self::FACETED_FILTERS as $other) {
+                    if ($other === $field) {
+                        continue;
+                    }
+
+                    $value = $active[$other]['value'] ?? null;
+
+                    if ($value === null || $value === '') {
+                        continue;
+                    }
+
+                    $filter[] = is_numeric($value)
+                        ? $other.' = '.$value
+                        : $other.' = "'.addcslashes((string) $value, '"\\').'"';
+                }
+
+                $raw = DegreeProgram::search($term)
+                    ->options([
+                        'facets' => [$field],
+                        'filter' => $filter,
+                        'limit' => 0,
+                    ])
+                    ->raw();
+
+                $counts[$field] = array_map('intval', $raw['facetDistribution'][$field] ?? []);
+            }
+
+            return $this->facetCache = $counts;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return $this->facetCache = [];
+        }
+    }
+
+    /**
+     * Append " (n)" to each option label from the facet counts for $field.
+     * Options with no matches keep their bare label so the dropdown still
+     * reads cleanly before a search term narrows anything.
+     *
+     * @param  array<int|string, string>  $labels
+     * @return array<int|string, string>
+     */
+    protected function decorateWithCounts(array $labels, string $field): array
+    {
+        $counts = $this->facetCounts()[$field] ?? [];
+
+        if ($counts === []) {
+            return $labels;
+        }
+
+        $decorated = [];
+
+        foreach ($labels as $value => $label) {
+            $count = $counts[(string) $value] ?? 0;
+            $decorated[$value] = $count > 0 ? $label.' ('.$count.')' : $label;
+        }
+
+        return $decorated;
     }
 
     /** @var array<int, true>|null program ids on the current user's list */

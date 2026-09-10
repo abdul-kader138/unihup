@@ -13,9 +13,13 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ShieldSeeder::class,
-            /* SubjectSeeder::class,
+            // Catalogue seeders — all updateOrCreate on stable natural keys,
+            // so they're idempotent and safe to re-run on every deploy
+            // (deploy.sh calls `db:seed --force`). Order matters: subjects and
+            // universities before the programs that reference them.
+            SubjectSeeder::class,
             UniversitySeeder::class,
-            DegreeProgramSeeder::class, */
+            DegreeProgramSeeder::class,
             RegionalScholarshipSeeder::class,
             UniversityRankingSeeder::class,
             DeadlineSeeder::class,
