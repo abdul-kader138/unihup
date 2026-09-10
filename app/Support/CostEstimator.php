@@ -117,12 +117,32 @@ final class CostEstimator
         ];
     }
 
-    /** Compact "€X–Y" net range using cautious defaults, for list badges. */
-    public static function quickRange(DegreeProgram $program): string
+    /**
+     * Net first-year range with cautious defaults, as integers.
+     *
+     * @return array{min: int, max: int}
+     */
+    public static function quickNet(DegreeProgram $program): array
     {
         $e = self::estimate($program, 20000, 'shared');
 
-        return '€'.number_format($e['net_min']).'–'.number_format($e['net_max']);
+        return ['min' => (int) $e['net_min'], 'max' => (int) $e['net_max']];
+    }
+
+    /** Single comparable figure for the net range (its midpoint). */
+    public static function quickMidpoint(DegreeProgram $program): int
+    {
+        $net = self::quickNet($program);
+
+        return (int) round(($net['min'] + $net['max']) / 2);
+    }
+
+    /** Compact "€X–Y" net range using cautious defaults, for list badges. */
+    public static function quickRange(DegreeProgram $program): string
+    {
+        $net = self::quickNet($program);
+
+        return '€'.number_format($net['min']).'–'.number_format($net['max']);
     }
 
     /**

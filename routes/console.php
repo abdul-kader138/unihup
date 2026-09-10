@@ -48,6 +48,14 @@ Schedule::command('unihup:send-weekly-digest')
     ->name('weekly-digest')
     ->withoutOverlapping();
 
+// Daily in-app bell digest of changes to each student's shortlisted
+// programs + newly relevant deadlines. Diffs from a global cache marker,
+// so a missed day is caught up on the next run.
+Schedule::command('unihup:notify-shortlist-changes')
+    ->dailyAt('07:30')
+    ->name('shortlist-change-notifications')
+    ->withoutOverlapping();
+
 // Weekly reachability sweep of every external catalog link — results feed
 // the admin data-freshness widget.
 Schedule::command('unihup:check-links')

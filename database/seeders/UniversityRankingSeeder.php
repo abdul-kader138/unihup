@@ -159,5 +159,8 @@ class UniversityRankingSeeder extends Seeder
                 ],
             );
         }
+
+        // Keep universities.latest_ranking_* in step with what we just wrote.
+        University::syncAllLatestRankingColumns();
     }
 }

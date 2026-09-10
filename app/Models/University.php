@@ -14,6 +14,13 @@ class University extends Model
 
     protected $fillable = ['name', 'canonical_name', 'slug', 'city', 'region', 'website_url', 'description', 'logo'];
 
+    protected function casts(): array
+    {
+        return [
+            'latest_ranking_overall_score' => 'float',
+        ];
+    }
+
     public function getDisplayNameAttribute(): string
     {
         return $this->canonical_name ?: $this->name;
@@ -35,6 +42,49 @@ class University extends Model
         return $this->relationLoaded('rankings')
             ? $this->rankings->sortByDesc('edition')->first()
             : $this->rankings()->orderByDesc('edition')->first();
+    }
+
+    /**
+     * Copy this university's most recent CENSIS row into its denormalised
+     * latest_ranking_* columns (see the matching migration). Cheap when the
+     * `rankings` relation is already loaded.
+     */
+    public function refreshLatestRankingColumns(): void
+    {
+        $ranking = $this->latestRanking();
+
+        $this->forceFill([
+            'latest_ranking_position' => $ranking?->position,
+            'latest_ranking_category' => $ranking?->category,
+            'latest_ranking_edition' => $ranking?->edition,
+            'latest_ranking_overall_score' => $ranking?->overall_score,
+        ])->save();
+    }
+
+    /** Re-sync the denormalised ranking columns for every university. */
+    public static function syncAllLatestRankingColumns(): void
+    {
+        static::query()->with('rankings')->chunkById(200, function ($universities) {
+            $universities->each->refreshLatestRankingColumns();
+        });
+    }
+
+    /** True when this university has a denormalised CENSIS standing. */
+    public function hasRanking(): bool
+    {
+        return $this->latest_ranking_position !== null;
+    }
+
+    /** e.g. "#3 among Large state universities · score 84.8 · 2025/2026". */
+    public function rankingSummary(): ?string
+    {
+        if (! $this->hasRanking()) {
+            return null;
+        }
+
+        $category = UniversityRanking::CATEGORIES[$this->latest_ranking_category] ?? $this->latest_ranking_category;
+
+        return "#{$this->latest_ranking_position} among {$category} · score {$this->latest_ranking_overall_score} · {$this->latest_ranking_edition}";
     }
 
     public function getLogoUrlAttribute(): ?string

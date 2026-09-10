@@ -5,7 +5,6 @@ namespace App\Filament\Pages;
 use App\Models\DegreeProgram;
 use App\Models\Subject;
 use App\Models\University;
-use App\Models\UniversityRanking;
 use App\Support\EligibilityEngine;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -56,7 +55,9 @@ class FindUniversities extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(DegreeProgram::query()->with(['university.rankings', 'subject']))
+            // latest_ranking_* on universities covers the card; the details
+            // modal load()s the full rankings rows only when it's opened.
+            ->query(DegreeProgram::query()->with(['university', 'subject']))
             ->searchPlaceholder('Search by university, program, or subject...')
             ->persistSearchInSession()
             ->persistFiltersInSession()
@@ -129,25 +130,18 @@ class FindUniversities extends Page implements HasTable
                                 ->color('gray')
                                 ->size('xs'),
 
-                            TextColumn::make('ranking')
+                            TextColumn::make('university.latest_ranking_position')
                                 ->label('')
-                                ->getStateUsing(function (?DegreeProgram $record) {
-                                    $ranking = $record?->university?->latestRanking();
-
-                                    return $ranking ? "CENSIS #{$ranking->position}" : null;
-                                })
-                                ->tooltip(function (?DegreeProgram $record) {
-                                    $ranking = $record?->university?->latestRanking();
-
-                                    return $ranking
-                                        ? "{$ranking->edition}: #{$ranking->position} among ".UniversityRanking::CATEGORIES[$ranking->category]." (score {$ranking->overall_score})"
-                                        : null;
-                                })
+                                ->sortable()
+                                ->getStateUsing(fn (?DegreeProgram $record) => $record?->university?->latest_ranking_position
+                                    ? "CENSIS #{$record->university->latest_ranking_position}"
+                                    : null)
+                                ->tooltip(fn (?DegreeProgram $record) => $record?->university?->rankingSummary())
                                 ->badge()
                                 ->color('warning')
                                 ->icon('heroicon-o-trophy')
                                 ->size('xs')
-                                ->visible(fn (?DegreeProgram $record) => $record?->university?->latestRanking() !== null),
+                                ->visible(fn (?DegreeProgram $record) => $record?->university?->hasRanking()),
                         ])->space(1),
                     ]),
 
@@ -186,6 +180,14 @@ class FindUniversities extends Page implements HasTable
                         ->color(fn (DegreeProgram $record) => EligibilityEngine::COLORS[$this->eligibilityFor($record)['verdict']])
                         ->tooltip(fn (DegreeProgram $record) => implode(' ', $this->eligibilityFor($record)['reasons']))
                         ->visible(fn () => auth()->user()->hasCompletedStudyProfile()),
+
+                    TextColumn::make('last_verified_at')
+                        ->label('')
+                        ->icon('heroicon-o-clock')
+                        ->size('xs')
+                        ->color(fn (DegreeProgram $record) => $record->isStale() ? 'warning' : 'gray')
+                        ->getStateUsing(fn (DegreeProgram $record) => $record->verificationLabel())
+                        ->tooltip('When an editor last confirmed this program\'s admission details against the official source. Always double-check on the university page.'),
                 ])->space(2),
             ])
             ->recordAction('view')
@@ -195,7 +197,9 @@ class FindUniversities extends Page implements HasTable
                     ->icon('heroicon-o-arrow-top-right-on-square')
                     ->link()
                     ->modalHeading(fn (DegreeProgram $record) => $record->name)
-                    ->modalContent(fn (DegreeProgram $record) => view('filament.pages.degree-program-details', ['program' => $record]))
+                    ->modalContent(fn (DegreeProgram $record) => view('filament.pages.degree-program-details', [
+                        'program' => $record->load('university.rankings'),
+                    ]))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
 
@@ -252,10 +256,14 @@ class FindUniversities extends Page implements HasTable
             return;
         }
 
-        auth()->user()->shortlistItems()->create([
+        $item = auth()->user()->shortlistItems()->make([
             'degree_program_id' => $program->id,
             'status' => 'researching',
+            'sort_order' => (int) auth()->user()->shortlistItems()->max('sort_order') + 1,
         ]);
+        $item->setRelation('degreeProgram', $program);
+        $item->tier = $item->suggestedTier(auth()->user());
+        $item->save();
         $this->shortlistedIds[$program->id] = true;
 
         Notification::make()

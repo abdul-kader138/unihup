@@ -68,7 +68,8 @@ class MyApplications extends Page implements HasTable
                     ->where('user_id', auth()->id())
                     ->with(['degreeProgram.university', 'degreeProgram.subject', 'applicationProgress', 'documents'])
             )
-            ->defaultSort('updated_at', 'desc')
+            ->defaultSort('sort_order')
+            ->reorderable('sort_order')
             ->columns([
                 Stack::make([
                     Split::make([
@@ -102,6 +103,11 @@ class MyApplications extends Page implements HasTable
                         ->options(ShortlistItem::STATUSES)
                         ->selectablePlaceholder(false)
                         ->rules(['required']),
+
+                    SelectColumn::make('tier')
+                        ->label('Tier')
+                        ->options(ShortlistItem::TIERS)
+                        ->placeholder('Set reach / target / safety'),
 
                     TextColumn::make('degreeProgram.admission_type')
                         ->label('Admission')
@@ -163,6 +169,14 @@ class MyApplications extends Page implements HasTable
                         ->tooltip('Rough first-year total (tuition + living − a possible scholarship), assuming ISEE €20,000 and a shared flat. Open the Cost Estimator to tune it.')
                         ->url(fn (ShortlistItem $record) => CostEstimator::getUrl(['program' => $record->degree_program_id])),
 
+                    TextColumn::make('data_freshness')
+                        ->label('')
+                        ->size('xs')
+                        ->icon('heroicon-o-clock')
+                        ->color(fn (ShortlistItem $record) => $record->degreeProgram->isStale() ? 'warning' : 'gray')
+                        ->getStateUsing(fn (ShortlistItem $record) => $record->degreeProgram->verificationLabel())
+                        ->tooltip('When an editor last confirmed this program\'s admission details. Re-check the official page before you rely on dates or fees.'),
+
                     TextColumn::make('notes')
                         ->label('My notes')
                         ->placeholder('—')
@@ -173,6 +187,7 @@ class MyApplications extends Page implements HasTable
             ])
             ->filters([
                 SelectFilter::make('status')->options(ShortlistItem::STATUSES),
+                SelectFilter::make('tier')->options(ShortlistItem::TIERS),
             ])
             ->contentGrid(['default' => 1, 'md' => 2, 'xl' => 3])
             ->actions([

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ApplicationSteps;
+use App\Support\EligibilityEngine;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,7 +19,23 @@ class ShortlistItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'degree_program_id', 'status', 'notes'];
+    protected $fillable = ['user_id', 'degree_program_id', 'status', 'tier', 'sort_order', 'notes'];
+
+    /**
+     * How likely this program is to admit the student, from their point of
+     * view — the classic shortlist framing. Order = display order.
+     */
+    public const TIERS = [
+        'reach' => 'Reach',
+        'target' => 'Target',
+        'safety' => 'Safety',
+    ];
+
+    public const TIER_COLORS = [
+        'reach' => 'danger',
+        'target' => 'warning',
+        'safety' => 'success',
+    ];
 
     /**
      * Status label per key. Order matters — this is also the order shown in
@@ -60,6 +77,35 @@ class ShortlistItem extends Model
     public function statusLabel(): string
     {
         return self::STATUSES[$this->status] ?? $this->status;
+    }
+
+    public function tierLabel(): ?string
+    {
+        return $this->tier ? (self::TIERS[$this->tier] ?? $this->tier) : null;
+    }
+
+    /**
+     * A first guess at reach/target/safety from the eligibility read plus
+     * whether the program is restricted-access. The student can override it.
+     */
+    public function suggestedTier(?User $user = null): string
+    {
+        $program = $this->degreeProgram;
+        $user ??= $this->user;
+
+        if ($program === null || $user === null) {
+            return 'target';
+        }
+
+        $verdict = EligibilityEngine::assess($program, $user)['verdict'];
+
+        return match (true) {
+            $verdict === EligibilityEngine::INELIGIBLE => 'reach',
+            $verdict === EligibilityEngine::CHECK && $program->admission_type === 'restricted' => 'reach',
+            $verdict === EligibilityEngine::CHECK => 'target',
+            $program->admission_type === 'restricted' => 'target',
+            default => 'safety',
+        };
     }
 
     public function applicationProgress(): HasMany

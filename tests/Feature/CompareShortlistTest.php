@@ -125,4 +125,64 @@ class CompareShortlistTest extends TestCase
             ->test(CompareShortlist::class)
             ->assertSet('selected', [$valid]);
     }
+
+    public function test_the_grid_flags_the_cheapest_and_best_ranked_columns(): void
+    {
+        $user = $this->student();
+        $programs = $this->shortlist($user, 3);
+
+        $programs[0]->update(['tuition_min' => 4000]);
+        $programs[1]->update(['tuition_min' => 1000]);
+        $programs[2]->update(['tuition_min' => 3000]);
+
+        // Two ranked universities so there's a genuine "best" to pick — the
+        // denormalised columns aren't fillable, so write them directly.
+        $programs[0]->university->forceFill(['latest_ranking_position' => 7])->save();
+        $programs[1]->university->forceFill(['latest_ranking_position' => 1])->save();
+
+        $grid = Livewire::actingAs($user)
+            ->test(CompareShortlist::class)
+            ->set('selected', collect($programs)->pluck('id')->all())
+            ->instance()
+            ->getComparison();
+
+        $rows = collect($grid['groups'])->flatMap(fn ($g) => $g['rows'])->keyBy('label');
+        $winner = array_search($programs[1]->id, array_column($grid['programs'], 'id'), true);
+        $loser = array_search($programs[0]->id, array_column($grid['programs'], 'id'), true);
+
+        $this->assertTrue($rows['Tuition']['values'][$winner]['best']);
+        $this->assertFalse($rows['Tuition']['values'][$loser]['best']);
+        $this->assertTrue($rows['CENSIS ranking']['values'][$winner]['best']);
+    }
+
+    public function test_only_differences_hides_rows_where_every_column_agrees(): void
+    {
+        $user = $this->student();
+        $programs = $this->shortlist($user, 2); // identical language / level / city
+
+        $component = Livewire::actingAs($user)
+            ->test(CompareShortlist::class)
+            ->set('selected', collect($programs)->pluck('id')->all());
+
+        $rowCount = fn (array $grid) => collect($grid['groups'])->sum(fn ($g) => count($g['rows']));
+
+        $full = $rowCount($component->instance()->getComparison());
+        $component->call('toggleOnlyDifferences');
+        $filteredGrid = $component->instance()->getComparison();
+
+        $this->assertLessThan($full, $rowCount($filteredGrid));
+        $this->assertGreaterThan(0, $filteredGrid['hidden_rows']);
+    }
+
+    public function test_pdf_export_is_scoped_to_the_owner_shortlist(): void
+    {
+        $user = $this->student();
+        $programs = $this->shortlist($user, 2);
+
+        $ok = $this->actingAs($user)->get(route('compare.pdf', ['programs' => collect($programs)->pluck('id')->all()]));
+        $ok->assertOk();
+        $this->assertSame('application/pdf', $ok->headers->get('content-type'));
+
+        $this->actingAs($user)->get(route('compare.pdf', ['programs' => [999999]]))->assertNotFound();
+    }
 }

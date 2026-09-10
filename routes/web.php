@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Http\Controllers\ComparePdfController;
 use App\Http\Controllers\DeadlineIcsController;
 use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\StudentDocumentController;
@@ -53,6 +54,11 @@ Route::get('/student-documents/{document}/download', StudentDocumentController::
 Route::get('/my-deadlines.ics', DeadlineIcsController::class)
     ->middleware('auth')
     ->name('deadlines.ics');
+
+// Print-friendly PDF of the student's Compare view (see CompareShortlist).
+Route::get('/compare.pdf', ComparePdfController::class)
+    ->middleware('auth')
+    ->name('compare.pdf');
 
 // Browser push subscriptions for the signed-in user (see public/js/push.js).
 Route::middleware('auth')->group(function () {

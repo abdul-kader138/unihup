@@ -250,8 +250,13 @@
                 </a>
             @endif
         </div>
-        @if ($program->last_verified_at)
-            <p class="mt-2 text-xs text-gray-400">Last verified {{ $program->last_verified_at->format('d M Y') }}</p>
-        @endif
+        <p @class([
+            'mt-2 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs',
+            'text-gray-400' => ! $program->isStale(),
+            'bg-warning-50 text-warning-700 dark:bg-warning-400/10 dark:text-warning-400' => $program->isStale(),
+        ])>
+            <x-heroicon-o-clock class="h-3.5 w-3.5" />
+            {{ $program->verificationLabel() }}@if ($program->last_verified_at) &middot; {{ $program->last_verified_at->format('d M Y') }}@endif
+        </p>
     </div>
 </div>

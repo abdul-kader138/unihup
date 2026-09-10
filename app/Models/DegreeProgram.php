@@ -48,9 +48,27 @@ class DegreeProgram extends Model
         'restricted' => 'Restricted (numero programmato)',
     ];
 
+    /** Matches the admin DataFreshnessWidget's "re-verify" threshold. */
+    public const STALE_AFTER_DAYS = 90;
+
     public function university(): BelongsTo
     {
         return $this->belongsTo(University::class);
+    }
+
+    /** True when this record has never been verified, or not in 90+ days. */
+    public function isStale(): bool
+    {
+        return $this->last_verified_at === null
+            || $this->last_verified_at->lt(now()->subDays(self::STALE_AFTER_DAYS));
+    }
+
+    /** Short human note about when the admission data was last checked. */
+    public function verificationLabel(): string
+    {
+        return $this->last_verified_at === null
+            ? 'Not yet verified'
+            : 'Checked '.$this->last_verified_at->diffForHumans();
     }
 
     public function subject(): BelongsTo
