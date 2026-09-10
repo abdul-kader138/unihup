@@ -1,0 +1,20 @@
+[Unit]
+Description=UniHup Laravel Horizon (queue supervisor)
+After=network.target mysql.service redis-server.service
+Requires=redis-server.service
+
+[Service]
+# Matches deploy.sh's WEB_USER/APP_DIR defaults. Horizon manages its own
+# pool of `queue:work` child processes per config/horizon.php, so there is
+# no --queue / --tries here — those live in the config.
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/unihup
+ExecStart=/usr/bin/php /var/www/unihup/artisan horizon
+# `systemctl restart` in deploy.sh does the code-refresh; Restart=always is
+# just crash recovery.
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

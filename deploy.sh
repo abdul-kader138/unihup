@@ -112,21 +112,51 @@ fi
 # Push Scout index settings (searchable/filterable/sortable attributes from
 # config/scout.php) to the search engine so they never drift from the code.
 # No-op unless SCOUT_DRIVER is a real engine; a search outage must not fail
-# the deploy, hence `|| true`.
+# the deploy, hence `|| true`. This is the ONLY Scout step that runs every
+# deploy — `scout:import` is a full index rebuild and is deliberately left
+# manual (run it once when switching engines, or after a toSearchableArray
+# change).
 if ! grep -qE '^SCOUT_DRIVER=(null|collection|database)?$' .env 2>/dev/null; then
     "$PHP_BIN" artisan scout:sync-index-settings || true
 fi
 
+# Refresh Horizon's published dashboard assets (public/vendor/horizon) after a
+# package upgrade. Skipped entirely until laravel/horizon is installed.
+if grep -q '"laravel/horizon"' composer.json; then
+    "$PHP_BIN" artisan horizon:publish || true
+fi
+
 "$PHP_BIN" artisan optimize
-"$PHP_BIN" artisan queue:restart
-# Installs/keeps the persistent queue worker current. queue:restart above
-# only signals an ALREADY-RUNNING worker to gracefully restart between
-# jobs — it starts nothing on its own, so this is what actually processes
-# anything dispatched to the queue (see the queue-worker unit file's own
-# comment on why an explicit restart, not just queue:restart, is needed to
-# pick up fresh code — same class of issue as php-fpm's opcache holding
-# onto a stale build after a deploy).
-if [[ -f deploy/unihup-queue-worker.service ]] && command -v systemctl >/dev/null 2>&1; then
+
+# ── Queue worker ────────────────────────────────────────────────────────────
+# Two mutually exclusive modes, picked by whether laravel/horizon is a
+# dependency:
+#   * Horizon present -> run the Horizon supervisor  (deploy/unihup-horizon.service)
+#   * otherwise       -> the plain `queue:work` unit (deploy/unihup-queue-worker.service)
+# The long-lived worker process caches code in memory, so an explicit
+# `systemctl restart` every deploy is what pulls the fresh build in (same
+# reasoning as the Reverb block below).
+if grep -q '"laravel/horizon"' composer.json \
+    && [[ -f deploy/unihup-horizon.service ]] \
+    && command -v systemctl >/dev/null 2>&1; then
+
+    install -m 644 deploy/unihup-horizon.service /etc/systemd/system/unihup-horizon.service
+    systemctl daemon-reload
+    systemctl enable unihup-horizon
+    systemctl restart unihup-horizon
+
+    # Retire the pre-Horizon plain worker if an earlier deploy installed it.
+    if systemctl list-unit-files 2>/dev/null | grep -q '^unihup-queue-worker\.service'; then
+        systemctl disable --now unihup-queue-worker || true
+        rm -f /etc/systemd/system/unihup-queue-worker.service
+        systemctl daemon-reload
+    fi
+
+elif [[ -f deploy/unihup-queue-worker.service ]] && command -v systemctl >/dev/null 2>&1; then
+    # queue:restart only signals an already-running worker to restart between
+    # jobs; the install + systemctl restart is what actually keeps a worker
+    # running against current code.
+    "$PHP_BIN" artisan queue:restart
     install -m 644 deploy/unihup-queue-worker.service /etc/systemd/system/unihup-queue-worker.service
     systemctl daemon-reload
     systemctl enable unihup-queue-worker
