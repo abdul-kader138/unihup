@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\DegreeProgram;
+use App\Models\University;
+
 return [
 
     /*
@@ -139,10 +142,44 @@ return [
     'meilisearch' => [
         'host' => env('MEILISEARCH_HOST', 'http://localhost:7700'),
         'key' => env('MEILISEARCH_KEY'),
+
+        // Pushed to the engine by `php artisan scout:sync-index-settings`.
+        // Keys are model classes; Scout applies SCOUT_PREFIX to the actual
+        // index names. Only the free-text fields go in searchableAttributes
+        // so relevance isn't diluted by enum columns; the enum/geo columns
+        // are made filterable for faceting.
         'index-settings' => [
-            // 'users' => [
-            //     'filterableAttributes'=> ['id', 'name', 'email'],
-            // ],
+            DegreeProgram::class => [
+                'searchableAttributes' => [
+                    'name',
+                    'university_name',
+                    'subject_name',
+                    'university_city',
+                ],
+                'filterableAttributes' => [
+                    'degree_level',
+                    'admission_type',
+                    'language',
+                ],
+                'sortableAttributes' => [
+                    'name',
+                ],
+            ],
+
+            University::class => [
+                'searchableAttributes' => [
+                    'name',
+                    'canonical_name',
+                    'city',
+                    'region',
+                ],
+                'filterableAttributes' => [
+                    'region',
+                ],
+                'sortableAttributes' => [
+                    'name',
+                ],
+            ],
         ],
     ],
 

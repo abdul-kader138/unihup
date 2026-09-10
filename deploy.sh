@@ -108,6 +108,15 @@ fi
 
 "$PHP_BIN" artisan db:seed --force
 "$PHP_BIN" artisan storage:link
+
+# Push Scout index settings (searchable/filterable/sortable attributes from
+# config/scout.php) to the search engine so they never drift from the code.
+# No-op unless SCOUT_DRIVER is a real engine; a search outage must not fail
+# the deploy, hence `|| true`.
+if ! grep -qE '^SCOUT_DRIVER=(null|collection|database)?$' .env 2>/dev/null; then
+    "$PHP_BIN" artisan scout:sync-index-settings || true
+fi
+
 "$PHP_BIN" artisan optimize
 "$PHP_BIN" artisan queue:restart
 # Installs/keeps the persistent queue worker current. queue:restart above
