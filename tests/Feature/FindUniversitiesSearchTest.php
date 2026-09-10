@@ -45,6 +45,7 @@ class FindUniversitiesSearchTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(FindUniversities::class)
+            ->loadTable()
             ->set('tableSearch', 'milan')
             ->assertCanSeeTableRecords([$match])
             ->assertCanNotSeeTableRecords([$noMatch]);
@@ -60,6 +61,7 @@ class FindUniversitiesSearchTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(FindUniversities::class)
+            ->loadTable()
             ->assertCanSeeTableRecords([$a, $b]);
     }
 }

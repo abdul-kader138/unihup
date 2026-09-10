@@ -121,6 +121,7 @@ class FindUniversitiesTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(FindUniversities::class)
+            ->loadTable()
             ->assertCanSeeTableRecords([$match])
             ->assertCanNotSeeTableRecords([$nonMatch]);
     }

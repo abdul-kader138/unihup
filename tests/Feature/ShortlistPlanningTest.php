@@ -89,6 +89,7 @@ class ShortlistPlanningTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(MyApplications::class)
+            ->loadTable()
             ->assertCanSeeTableRecords([$ib, $ia], inOrder: true) // sort_order asc
             ->assertTableColumnExists('tier')
             ->assertTableColumnExists('data_freshness');

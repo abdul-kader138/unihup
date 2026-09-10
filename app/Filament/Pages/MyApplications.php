@@ -68,6 +68,10 @@ class MyApplications extends Page implements HasTable
                     ->where('user_id', auth()->id())
                     ->with(['degreeProgram.university', 'degreeProgram.subject', 'applicationProgress', 'documents'])
             )
+            // Each row does an eligibility read, a checklist tally and a cost
+            // estimate on top of the four eager-loaded relations — let the
+            // page shell paint first and pull the rows in a second request.
+            ->deferLoading()
             ->defaultSort('sort_order')
             ->reorderable('sort_order')
             ->columns([

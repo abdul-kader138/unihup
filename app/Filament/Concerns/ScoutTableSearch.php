@@ -17,6 +17,15 @@ use Illuminate\Database\Eloquent\Model;
  */
 trait ScoutTableSearch
 {
+    /**
+     * Upper bound on how many matching keys are pulled from the search
+     * engine and handed to the follow-up `whereIn`. The table paginates a
+     * dozen-ish rows and is normally narrowed further by the Select
+     * filters, so this only exists to stop a broad term (or the in-process
+     * "collection" driver) from building a multi-thousand-item IN list.
+     */
+    protected int $scoutKeyLimit = 500;
+
     /** @return class-string<Model> */
     abstract protected function scoutModel(): string;
 
@@ -33,7 +42,7 @@ trait ScoutTableSearch
 
         return $query->whereIn(
             $query->getModel()->getQualifiedKeyName(),
-            $model::search($term)->keys()->all(),
+            $model::search($term)->take($this->scoutKeyLimit)->keys()->all(),
         );
     }
 

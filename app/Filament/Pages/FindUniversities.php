@@ -62,6 +62,10 @@ class FindUniversities extends Page implements HasTable
             // modal load()s the full rankings rows only when it's opened.
             ->query(DegreeProgram::query()->with(['university', 'subject']))
             ->searchPlaceholder('Search by university, program, or subject...')
+            // Render the page shell immediately; the table body (a
+            // university+subject join with a per-row eligibility read) loads
+            // in a follow-up request so first paint isn't blocked on it.
+            ->deferLoading()
             ->persistSearchInSession()
             ->persistFiltersInSession()
             ->deferFilters(false)

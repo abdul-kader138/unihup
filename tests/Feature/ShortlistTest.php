@@ -93,6 +93,7 @@ class ShortlistTest extends TestCase
 
         Livewire::actingAs($mine)
             ->test(MyApplications::class)
+            ->loadTable()
             ->assertCanSeeTableRecords([$a])
             ->assertCanNotSeeTableRecords([$b]);
     }
