@@ -125,9 +125,21 @@ class Deadline extends Model
             if ($regionKeys->isNotEmpty()) {
                 // Region strings can't be canonicalised in SQL, so the match
                 // stays in PHP — but only id + region need to come back.
-                $scholarshipIds = RegionalScholarship::query()
-                    ->get(['id', 'region'])
-                    ->filter(fn ($s) => $regionKeys->contains(ItalianRegions::canonicalize($s->region)))
+                // Scholarship regions change rarely, so cache the id/region
+                // pairs instead of reloading the table on every call (this
+                // runs once per user inside reminder/digest command loops).
+                // Cache a plain array, not Eloquent models — cache.serializable_classes
+                // is false here, so a cached object would come back as __PHP_Incomplete_Class.
+                $scholarships = Cache::remember(
+                    'deadlines:regional-scholarship-regions',
+                    now()->addMinutes(10),
+                    fn () => RegionalScholarship::query()->get(['id', 'region'])
+                        ->map(fn ($s) => ['id' => $s->id, 'region' => $s->region])
+                        ->all()
+                );
+
+                $scholarshipIds = collect($scholarships)
+                    ->filter(fn ($s) => $regionKeys->contains(ItalianRegions::canonicalize($s['region'])))
                     ->pluck('id');
             }
         }

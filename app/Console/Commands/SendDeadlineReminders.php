@@ -100,7 +100,7 @@ class SendDeadlineReminders extends Command
             return true;
         }
 
-        Mail::to($user->email)->send(new DeadlineReminderMail($user, $unsent->values(), $offset));
+        Mail::to($user->email)->queue(new DeadlineReminderMail($user, $unsent->values(), $offset));
         $this->log($user, $unsent, $offset, DeadlineReminderLog::CHANNEL_MAIL);
 
         return true;

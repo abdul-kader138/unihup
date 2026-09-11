@@ -11,6 +11,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use App\Support\Avatar;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\DeleteBulkAction;
@@ -71,7 +72,11 @@ class UniversityResource extends Resource
                         ->image()
                         ->disk('public')
                         ->directory('universities')
-                        ->visibility('public'),
+                        ->visibility('public')
+                        ->imageResizeMode('cover')
+                        ->imageResizeTargetWidth(200)
+                        ->imageResizeTargetHeight(200)
+                        ->maxSize(1024),
                 ]),
         ]);
     }
@@ -83,7 +88,7 @@ class UniversityResource extends Resource
                 ImageColumn::make('logo')
                     ->disk('public')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name='.urlencode($record->name)),
+                    ->defaultImageUrl(fn ($record) => Avatar::initialsDataUri($record->name)),
 
                 TextColumn::make('name')
                     ->formatStateUsing(fn ($state, University $record) => $record->display_name)

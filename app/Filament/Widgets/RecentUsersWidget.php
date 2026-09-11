@@ -17,7 +17,12 @@ class RecentUsersWidget extends BaseWidget
     {
         return $table
             ->heading('Recent users')
-            ->query(User::query()->with('roles')->latest())
+            ->query(
+                User::query()
+                    ->select(['id', 'name', 'email', 'email_verified_at'])
+                    ->latest()
+                    ->limit(5)
+            )
             ->columns([
                 TextColumn::make('name')
                     ->label('Name'),

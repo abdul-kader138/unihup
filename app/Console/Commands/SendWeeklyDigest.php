@@ -65,7 +65,7 @@ class SendWeeklyDigest extends Command
                 continue;
             }
 
-            Mail::to($user->email)->send(new WeeklyDigestMail($user, $data));
+            Mail::to($user->email)->queue(new WeeklyDigestMail($user, $data));
             $user->forceFill(['weekly_digest_sent_at' => now()])->save();
             $sent++;
         }

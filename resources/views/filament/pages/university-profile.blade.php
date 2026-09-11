@@ -11,7 +11,7 @@
     {{-- Header --}}
     <div class="ui-hero">
         <div class="flex items-start gap-4">
-            <img src="{{ $u->display_logo_url }}" alt="" class="h-14 w-14 shrink-0 rounded-xl object-contain bg-white ring-1 ring-gray-200 dark:ring-white/10">
+            <img src="{{ $u->display_logo_url }}" alt="" loading="lazy" class="h-14 w-14 shrink-0 rounded-xl object-contain bg-white ring-1 ring-gray-200 dark:ring-white/10">
             <div class="min-w-0">
                 <h2 class="text-lg font-semibold tracking-tight">{{ $u->display_name }}</h2>
                 <p class="mt-0.5 text-[0.8125rem] text-gray-600 dark:text-gray-300">

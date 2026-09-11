@@ -43,7 +43,7 @@
                                 border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-white/15 dark:text-gray-300 dark:hover:bg-white/5
                             @endif"
                     >
-                        <img src="{{ $chip['logo'] }}" alt="" class="h-4 w-4 shrink-0 rounded object-contain">
+                        <img src="{{ $chip['logo'] }}" alt="" loading="lazy" class="h-4 w-4 shrink-0 rounded object-contain">
                         <span class="truncate">{{ $chip['university'] }}</span>
                         @if ($chip['selected'])
                             <x-heroicon-s-check class="h-3.5 w-3.5 shrink-0" />
@@ -94,7 +94,7 @@
                                 <th scope="col" class="p-3 text-left align-bottom">
                                     <div class="flex items-start justify-between gap-2">
                                         <div class="flex items-center gap-2">
-                                            <img src="{{ $program['logo'] }}" alt="" class="h-8 w-8 shrink-0 rounded-md object-contain ring-1 ring-gray-200 dark:ring-white/10">
+                                            <img src="{{ $program['logo'] }}" alt="" loading="lazy" class="h-8 w-8 shrink-0 rounded-md object-contain ring-1 ring-gray-200 dark:ring-white/10">
                                             <span class="font-semibold">{{ $program['university'] }}</span>
                                         </div>
                                         <button

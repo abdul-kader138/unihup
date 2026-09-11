@@ -143,6 +143,7 @@ class DegreeProgramResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['university', 'subject']))
             ->columns([
                 TextColumn::make('university.name')
                     ->formatStateUsing(fn ($state, DegreeProgram $record) => $record->university->display_name)
