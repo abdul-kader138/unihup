@@ -112,8 +112,10 @@ class UserResource extends Resource
                         // Goes through syncRoles() rather than Filament's default
                         // pivot ->sync() so RoleAttached/RoleDetached fire and
                         // the change lands in the audit log (see
-                        // App\Listeners\LogPermissionActivity).
-                        ->saveRelationshipsUsing(fn ($record, $state) => $record->syncRoles($state)),
+                        // App\Listeners\LogPermissionActivity). $state is role
+                        // IDs (relationship('roles', 'name') keys options by
+                        // id) — syncRoles() needs names, not ids.
+                        ->saveRelationshipsUsing(fn ($record, $state) => $record->syncRoles(Role::query()->whereIn('id', $state)->pluck('name'))),
                 ]),
         ]);
     }
