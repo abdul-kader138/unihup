@@ -19,7 +19,7 @@ class RecentUsersWidget extends BaseWidget
             ->heading('Recent users')
             ->query(
                 User::query()
-                    ->select(['id', 'name', 'email', 'email_verified_at'])
+                    ->select(['id', 'first_name', 'last_name', 'email', 'email_verified_at'])
                     ->latest()
                     ->limit(5)
             )
