@@ -60,6 +60,14 @@ Route::get('/compare.pdf', ComparePdfController::class)
     ->middleware('auth')
     ->name('compare.pdf');
 
+// Short, shareable referral link — redirects into the panel's registration
+// page with the code preserved as ?ref=. Plain public route (no `signed`
+// needed, it's just a redirect passthrough, not a sensitive action) — see
+// App\Filament\Auth\Register for where the code is actually captured/used.
+Route::get('/r/{code}', fn (string $code) => redirect(route('filament.admin.auth.register', ['ref' => $code])))
+    ->middleware('throttle:60,1')
+    ->name('referral.redirect');
+
 // Browser push subscriptions for the signed-in user (see public/js/push.js).
 Route::middleware('auth')->group(function () {
     Route::post('/push/subscription', [PushSubscriptionController::class, 'store'])->name('push.subscribe');

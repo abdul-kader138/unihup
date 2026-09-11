@@ -22,6 +22,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
@@ -65,6 +66,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
             'study_profile_completed_at' => 'datetime',
             'deadline_reminders_opt_out' => 'boolean',
             'weekly_digest_sent_at' => 'datetime',
+            'journey_last_active_date' => 'date',
             // Encrypted at rest — plain Eloquent casts, no extra package needed.
             'two_factor_secret' => 'encrypted',
             'two_factor_recovery_codes' => 'encrypted:array',
@@ -166,6 +168,60 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
     public function hasCompletedStudyProfile(): bool
     {
         return $this->study_profile_completed_at !== null;
+    }
+
+    /**
+     * Bump the "opened My Journey today" streak. Safe to call more than once
+     * a day — a second call the same day is a no-op.
+     */
+    public function recordJourneyActivity(): void
+    {
+        $today = now()->toDateString();
+        $last = $this->journey_last_active_date?->toDateString();
+
+        if ($last === $today) {
+            return;
+        }
+
+        $this->journey_streak_current = $last === now()->subDay()->toDateString()
+            ? $this->journey_streak_current + 1
+            : 1;
+
+        $this->journey_streak_longest = max($this->journey_streak_longest, $this->journey_streak_current);
+        $this->journey_last_active_date = $today;
+        $this->save();
+    }
+
+    public function referredUsers(): HasMany
+    {
+        return $this->hasMany(self::class, 'referred_by_user_id');
+    }
+
+    public function referrer(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'referred_by_user_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            $user->referral_code ??= self::generateUniqueReferralCode();
+        });
+    }
+
+    private static function generateUniqueReferralCode(): string
+    {
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $code = Str::upper(Str::random(8));
+
+            if (! self::where('referral_code', $code)->exists()) {
+                return $code;
+            }
+        }
+
+        // Astronomically unlikely to be reached, but keep registration from
+        // ever hard-failing on a collision streak.
+        return Str::upper(Str::random(12));
     }
 
     public function getFilamentAvatarUrl(): ?string

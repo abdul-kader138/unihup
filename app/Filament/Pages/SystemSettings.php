@@ -99,6 +99,9 @@ class SystemSettings extends Page implements HasForms
             'deadline_reminders_enabled' => (bool) Setting::get('deadline_reminders_enabled', true),
             'deadline_reminder_whatsapp_template' => Setting::get('deadline_reminder_whatsapp_template', 'deadline_reminder'),
             'deadline_reminder_whatsapp_language' => Setting::get('deadline_reminder_whatsapp_language', 'en'),
+            'stalled_progress_nudges_enabled' => (bool) Setting::get('stalled_progress_nudges_enabled', true),
+            'stalled_progress_whatsapp_template' => Setting::get('stalled_progress_whatsapp_template', 'stalled_progress_nudge'),
+            'stalled_progress_whatsapp_language' => Setting::get('stalled_progress_whatsapp_language', 'en'),
         ]);
     }
 
@@ -398,6 +401,24 @@ class SystemSettings extends Page implements HasForms
                                             ->maxLength(10),
                                     ]),
                                 ]),
+
+                            Section::make('Stalled progress nudges')
+                                ->description('Nudges students whose shortlisted application has had no checklist progress in 10+ days. Runs daily at 10:00.')
+                                ->schema([
+                                    Toggle::make('stalled_progress_nudges_enabled')
+                                        ->label('Send stalled progress nudges')
+                                        ->default(true),
+                                    Grid::make(2)->schema([
+                                        TextInput::make('stalled_progress_whatsapp_template')
+                                            ->label('WhatsApp template name')
+                                            ->helperText('An approved WhatsApp template used for the WhatsApp copy of the nudge. Only used when WhatsApp is configured and the student opted in.')
+                                            ->maxLength(255),
+                                        TextInput::make('stalled_progress_whatsapp_language')
+                                            ->label('Template language code')
+                                            ->placeholder('en')
+                                            ->maxLength(10),
+                                    ]),
+                                ]),
                         ]),
 
                 ])->persistTabInQueryString('tab'),
@@ -427,6 +448,9 @@ class SystemSettings extends Page implements HasForms
             'deadline_reminders_enabled' => 'email',
             'deadline_reminder_whatsapp_template' => 'email',
             'deadline_reminder_whatsapp_language' => 'email',
+            'stalled_progress_nudges_enabled' => 'email',
+            'stalled_progress_whatsapp_template' => 'email',
+            'stalled_progress_whatsapp_language' => 'email',
         ];
 
         foreach ($data as $key => $value) {

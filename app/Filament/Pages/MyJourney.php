@@ -45,6 +45,24 @@ class MyJourney extends Page
     /** @var array<int, mixed>|null per-request memo of the built checklist */
     protected ?array $checklistCache = null;
 
+    public function mount(): void
+    {
+        auth()->user()->recordJourneyActivity();
+    }
+
+    /**
+     * @return array{current: int, longest: int}
+     */
+    public function getStreak(): array
+    {
+        $user = auth()->user();
+
+        return [
+            'current' => $user->journey_streak_current,
+            'longest' => $user->journey_streak_longest,
+        ];
+    }
+
     /**
      * The signed-in student's shortlist, loaded once with every relation the
      * five sections of this page need. Before this, My Journey reloaded the

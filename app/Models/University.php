@@ -6,6 +6,7 @@ use App\Support\Avatar;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Scout\Searchable;
 
@@ -102,6 +103,29 @@ class University extends Model
         $category = UniversityRanking::CATEGORIES[$this->latest_ranking_category] ?? $this->latest_ranking_category;
 
         return "#{$this->latest_ranking_position} among {$category} · score {$this->latest_ranking_overall_score} · {$this->latest_ranking_edition}";
+    }
+
+    /** Every ShortlistItem across this university's degree programs. */
+    public function shortlistItems(): HasManyThrough
+    {
+        return $this->hasManyThrough(ShortlistItem::class, DegreeProgram::class, 'university_id', 'degree_program_id');
+    }
+
+    /**
+     * Copy this university's live shortlist count into the denormalised
+     * shortlist_items_count column (see the matching migration).
+     */
+    public function refreshShortlistCount(): void
+    {
+        $this->update(['shortlist_items_count' => $this->shortlistItems()->count()]);
+    }
+
+    /** Re-sync the denormalised shortlist count for every university. */
+    public static function syncAllShortlistCounts(): void
+    {
+        static::query()->chunkById(200, function ($universities) {
+            $universities->each->refreshShortlistCount();
+        });
     }
 
     public function getLogoUrlAttribute(): ?string

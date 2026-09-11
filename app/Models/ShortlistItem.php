@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * One program a student has saved to their personal list, plus where they
@@ -111,6 +112,11 @@ class ShortlistItem extends Model
     public function applicationProgress(): HasMany
     {
         return $this->hasMany(ApplicationProgress::class);
+    }
+
+    public function stalledProgressNudgeLog(): HasOne
+    {
+        return $this->hasOne(StalledProgressNudgeLog::class);
     }
 
     public function documents(): BelongsToMany

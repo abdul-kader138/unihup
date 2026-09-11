@@ -4,6 +4,7 @@
     @php($progress = $this->getChecklistProgress())
     @php($guides = $this->getGuidesProgress())
     @php($deadlines = $this->getUpcomingDeadlines())
+    @php($streak = $this->getStreak())
     @php($user = auth()->user())
 
     {{-- Hero --}}
@@ -23,7 +24,7 @@
     </div>
 
     {{-- Stats --}}
-    <div class="ui-grid ui-grid--4">
+    <div class="ui-grid ui-grid--5">
         <x-ui.stat
             label="Saved programs"
             :value="$summary['shortlist_total']"
@@ -63,6 +64,17 @@
             link-label="Open the guides"
         >
             <x-ui.progress :value="$guides['percent']" class="mt-2" />
+        </x-ui.stat>
+
+        <x-ui.stat
+            label="Day streak"
+            :value="$streak['current']"
+            :href="null"
+        >
+            <div class="mt-2 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                <x-heroicon-o-fire class="h-3.5 w-3.5 text-warning-500" />
+                Best: {{ $streak['longest'] }} {{ \Illuminate\Support\Str::plural('day', $streak['longest']) }}
+            </div>
         </x-ui.stat>
     </div>
 

@@ -88,6 +88,7 @@ class UniversityProfile extends Page
 
         if ($existing !== null) {
             $existing->delete();
+            $this->university->decrement('shortlist_items_count');
             Notification::make()->title('Removed from your list')->send();
 
             return;
@@ -97,6 +98,7 @@ class UniversityProfile extends Page
             'degree_program_id' => $programId,
             'status' => 'researching',
         ]);
+        $this->university->increment('shortlist_items_count');
 
         Notification::make()->title('Saved to your list')->success()->send();
     }

@@ -24,6 +24,12 @@
                             CENSIS {{ $ranking->edition }}: #{{ $ranking->position }} ({{ \App\Models\UniversityRanking::CATEGORIES[$ranking->category] }})
                         </span>
                     @endif
+                    @if ($u->shortlist_items_count >= 5)
+                        <span class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 dark:bg-primary-400/10 dark:text-primary-400">
+                            <x-heroicon-o-user-group class="h-3.5 w-3.5" />
+                            {{ number_format($u->shortlist_items_count) }} students have shortlisted this university
+                        </span>
+                    @endif
                     @if ($u->website_url)
                         <a href="{{ $u->website_url }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-xs font-semibold text-primary-600 hover:underline dark:text-primary-400">
                             Official website &rarr;

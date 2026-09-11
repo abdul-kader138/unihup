@@ -56,6 +56,23 @@ Schedule::command('unihup:notify-shortlist-changes')
     ->name('shortlist-change-notifications')
     ->withoutOverlapping();
 
+// Proactive WhatsApp/push nudge for shortlist items with no checklist
+// progress in 10+ days. Idempotent via stalled_progress_nudge_logs (14-day
+// cooldown per item). Offset from the 07:00 deadline job so they don't
+// compete for the same queue worker.
+Schedule::command('unihup:notify-stalled-progress')
+    ->dailyAt('10:00')
+    ->name('stalled-progress-nudges')
+    ->withoutOverlapping();
+
+// Drift-correction resync of universities.shortlist_items_count — normally
+// kept live by an increment/decrement on toggle (see
+// UniversityProfile::toggleShortlist()).
+Schedule::command('unihup:sync-shortlist-counts')
+    ->dailyAt('05:00')
+    ->name('sync-shortlist-counts')
+    ->withoutOverlapping();
+
 // Weekly reachability sweep of every external catalog link — results feed
 // the admin data-freshness widget.
 Schedule::command('unihup:check-links')

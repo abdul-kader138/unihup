@@ -4,6 +4,7 @@ namespace App\Filament\Auth;
 
 use App\Models\User;
 use Filament\Forms\Components\Component;
+use Filament\Notifications\Notification;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -59,6 +60,23 @@ class Register extends BaseRegister
         '+62' => [10, 11],
     ];
 
+    /**
+     * Stash a ?ref= referral code into the session before the stock mount()
+     * runs — the registration form itself carries no referral field, so this
+     * is the only capture point for a code arriving via a shared /r/{code}
+     * link. Invalid/unknown codes are silently ignored in handleRegistration().
+     */
+    public function mount(): void
+    {
+        $code = trim((string) request()->query('ref', ''));
+
+        if ($code !== '') {
+            session(['referral_code' => $code]);
+        }
+
+        parent::mount();
+    }
+
     protected function handleRegistration(array $data): Model
     {
         $countryCode = preg_replace('/\D+/', '', (string) ($data['whatsapp_country_code'] ?? '')) ?? '';
@@ -78,7 +96,39 @@ class Register extends BaseRegister
 
         $user->assignRole('panel_user');
 
+        $this->attributeReferral($user);
+
         return $user;
+    }
+
+    /**
+     * Link this user to whoever referred them (if session has a valid
+     * ?ref= code from the registration link) and let the referrer know.
+     */
+    private function attributeReferral(Model $user): void
+    {
+        if (! $user instanceof User) {
+            return;
+        }
+
+        $code = session()->pull('referral_code');
+
+        if (! is_string($code) || $code === '') {
+            return;
+        }
+
+        $referrer = User::where('referral_code', $code)->first();
+
+        if ($referrer === null || $referrer->is($user)) {
+            return;
+        }
+
+        $user->forceFill(['referred_by_user_id' => $referrer->id])->save();
+
+        Notification::make()
+            ->title('🎉 '.$user->name.' joined using your referral link')
+            ->icon('heroicon-o-user-plus')
+            ->sendToDatabase($referrer);
     }
 
     /**
