@@ -27,7 +27,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['first_name', 'last_name', 'email', 'phone', 'marketing_opt_in', 'whatsapp_number', 'whatsapp_opt_in', 'whatsapp_opt_in_at', 'password', 'avatar', 'google_id', 'email_verified_at', 'preferred_subject_id', 'preferred_degree_level', 'nationality', 'is_eu_citizen', 'prior_education_country', 'english_level', 'italian_level', 'scholarship_interest', 'home_currency', 'study_profile_completed_at', 'deadline_reminders_opt_out', 'weekly_digest_sent_at'])]
+#[Fillable(['first_name', 'last_name', 'email', 'phone', 'marketing_opt_in', 'whatsapp_number', 'whatsapp_opt_in', 'whatsapp_opt_in_at', 'password', 'avatar', 'google_id', 'email_verified_at', 'is_active', 'preferred_subject_id', 'preferred_degree_level', 'nationality', 'is_eu_citizen', 'prior_education_country', 'english_level', 'italian_level', 'scholarship_interest', 'home_currency', 'study_profile_completed_at', 'deadline_reminders_opt_out', 'weekly_digest_sent_at'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, MustVerifyEmail
 {
@@ -58,6 +58,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
             'marketing_opt_in' => 'boolean',
             'whatsapp_opt_in' => 'boolean',
             'whatsapp_opt_in_at' => 'datetime',
@@ -90,6 +91,10 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, HasName, 
 
     public function canAccessPanel(Panel $panel): bool
     {
+        if (! $this->is_active) {
+            return false;
+        }
+
         return $this->hasAnyRole(['super_admin', 'panel_user'])
             || $this->getAllPermissions()->isNotEmpty();
     }

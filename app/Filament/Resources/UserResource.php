@@ -7,14 +7,17 @@ use App\Models\User;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -88,6 +91,12 @@ class UserResource extends Resource
                         ->dehydrated(false)
                         ->same('password')
                         ->required(fn (string $operation) => $operation === 'create'),
+
+                    Toggle::make('is_active')
+                        ->label('Account enabled')
+                        ->helperText('Disabling this immediately blocks the user from logging in or using an existing session.')
+                        ->default(true)
+                        ->columnSpanFull(),
                 ])->columns(2),
 
             Section::make('Roles')
@@ -134,6 +143,10 @@ class UserResource extends Resource
                     ->separator(',')
                     ->color('primary'),
 
+                IconColumn::make('is_active')
+                    ->label('Enabled')
+                    ->boolean(),
+
                 TextColumn::make('email_verified_at')
                     ->label('Verified')
                     ->dateTime()
@@ -150,6 +163,8 @@ class UserResource extends Resource
                 SelectFilter::make('roles')
                     ->relationship('roles', 'name')
                     ->preload(),
+                TernaryFilter::make('is_active')
+                    ->label('Account enabled'),
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([
